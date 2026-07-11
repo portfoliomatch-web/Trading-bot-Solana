@@ -453,7 +453,7 @@ def main():
                     # Swing top verkoop alleen om middernacht
                     verkoop_window = (now.hour == 0 and now.minute <= 30)
 
-                    if verkoop_signaal and rsi > 45 and verkoop_window:
+                    if verkoop_signaal and rsi > 60 and verkoop_window:
                         send(f"📉 SELL signaal — {verkoop_reden} | RSI: {rsi:.1f}")
                         sell_all("(swing top)")
 
