@@ -165,7 +165,10 @@ def check_sell_signaal(candles):
     if is_bearish_engulfing(c_prev, c_curr):
         return True, "bearish engulfing"
     return False, ""
-
+    
+def bereken_support(candles):
+    lows = [c["low"] for c in candles]
+    return min(lows[-20:])  # laagste punt 20 dagen
 # =============================
 # TELEGRAM
 # =============================
@@ -436,11 +439,14 @@ def main():
                 )
 
                 if sol == 0 and eur > 5:
+                    support = bereken_support(candles)
+                    near_support = sol_price <= support * 1.08
+
                     sterke_buy = (
                         koop_signaal
-                        and rsi < 55
+                        and rsi < 40
+                        and near_support
                         and market_mode != "bearish"
-                        and koop_window
                     )
 
                     if sterke_buy:
