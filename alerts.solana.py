@@ -450,17 +450,13 @@ def main():
                 koop_window = (now.hour == 0 and now.minute <= 30)  # middernacht
                 
                 if sol == 0 and eur > 5:
-                    support = bereken_support(candles)
-                    near_support = sol_price <= support * 1.15
-
                     sterke_buy = (
-                        koop_signaal
-                        and rsi < 35
-                        and near_support
-                        and bull_trend
-                        and not drie_rode_candles(candles)
-                        and market_mode == "bullish"
-                    )
+                    koop_signaal
+                    and rsi < 35
+                    and bull_trend
+                    and not drie_rode_candles(candles)
+                    and market_mode == "bullish"
+                 )
 
                     if sterke_buy:
                         send(f"📈 STRONG BUY — {koop_reden} | RSI: {rsi:.1f} | mode: {market_mode}")
