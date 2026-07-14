@@ -447,9 +447,8 @@ def main():
 
                 # --- BUY ---
                 # Alleen kopen tussen 00:00 en 00:30 na sluiting dagcandle
-                koop_window = (
-                    (now.hour == 0 and now.minute <= 30) or    # middernacht
-                )
+                koop_window = (now.hour == 0 and now.minute <= 30) or    # middernacht
+                
                 if sol == 0 and eur > 5:
                     support = bereken_support(candles)
                     near_support = sol_price <= support * 1.08
