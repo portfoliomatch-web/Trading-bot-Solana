@@ -450,7 +450,6 @@ def main():
                 koop_window = (
                     (now.hour == 0 and now.minute <= 30) or    # middernacht
                 )
-
                 if sol == 0 and eur > 5:
                     support = bereken_support(candles)
                     near_support = sol_price <= support * 1.08
