@@ -451,7 +451,7 @@ def main():
                 
                 if sol == 0 and eur > 5:
                     support = bereken_support(candles)
-                    near_support = sol_price <= support * 1.08
+                    near_support = sol_price <= support * 1.15
 
                     sterke_buy = (
                         koop_signaal
