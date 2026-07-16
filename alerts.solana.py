@@ -509,7 +509,7 @@ def main():
                         f"RSI: {rsi:.1f}\n"
                         f"Status: {status}\n"
                         f"Saldo: €{totaal:.2f}\n"
-                        f"Market mode: {market_mode}\n"
+                        f"EMA trend: {'bullish' if bull_trend else 'bearish'}\n"
                         f"Koop signaal: {koop_signaal} ({koop_reden})\n"
                         f"Verkoop signaal: {verkoop_signaal} ({verkoop_reden})"
                     )
