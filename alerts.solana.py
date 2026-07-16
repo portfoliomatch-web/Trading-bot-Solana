@@ -180,7 +180,12 @@ def check_sell_signaal(candles):
 def bereken_support(candles):
     lows = [c["low"] for c in candles]
     return min(lows[-20:])
-    
+def bereken_7d_low(candles):
+    lows = [c["low"] for c in candles[-7:]]
+    return min(lows)
+def bereken_7d_high(candles):
+    highs = [c["high"] for c in candles[-7:]]
+    return max(highs)   
 # =============================
 # TELEGRAM
 # =============================
@@ -457,13 +462,17 @@ def main():
                 koop_window = (now.hour == 0 and now.minute <= 30)  # middernacht
                 
                 if sol == 0 and eur > 5:
+                    low_7d = bereken_7d_low(candles)
+                    near_low = sol_price <= low_7d * 1.05
+
                     sterke_buy = (
-                    koop_signaal
-                    and rsi < 35
-                    and bull_trend
-                    and not drie_rode_candles(candles)
-                    and market_mode == "bullish"
-                 )
+                        koop_signaal
+                        and rsi < 35
+                        and near_low
+                        and bull_trend
+                        and not drie_rode_candles(candles)
+                        and market_mode == "bullish"
+                    )
 
                     if sterke_buy:
                         send(f"📈 STRONG BUY — {koop_reden} | RSI: {rsi:.1f} | mode: {market_mode}")
@@ -475,7 +484,10 @@ def main():
                     # Swing top verkoop alleen om middernacht
                     verkoop_window = (now.hour == 0 and now.minute <= 30)
 
-                    if verkoop_signaal and rsi > 60 and verkoop_window:
+                    high_7d = bereken_7d_high(candles)
+                    near_high = sol_price >= high_7d * 0.95
+
+                    if verkoop_signaal and rsi > 60 and near_high and verkoop_window:
                         send(f"📉 SELL signaal — {verkoop_reden} | RSI: {rsi:.1f}")
                         sell_all("(swing top)")
 
