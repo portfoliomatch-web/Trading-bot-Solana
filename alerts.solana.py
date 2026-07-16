@@ -469,7 +469,6 @@ def main():
                         and near_low
                         and bull_trend
                         and not drie_rode_candles(candles)
-                        and market_mode == "bullish"
                     )
 
                     if sterke_buy:
