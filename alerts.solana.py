@@ -506,10 +506,11 @@ def main():
                     send(
                         f"📊 Update\n"
                         f"Koers: €{sol_price:.2f}\n"
-                        f"RSI: {rsi:.1f} ({'bullish' if rsi < 35 else 'bearish' if rsi > 60 else 'neutraal'})\n"
-                        f"EMA20: {ema20:.2f} ({'bullish' if bull_trend else 'bearish'})\n"
                         f"Status: {status}\n"
                         f"Saldo: €{totaal:.2f}\n"
+                        f"___________________________\n"
+                        f"RSI: {rsi:.1f} ({'bullish' if rsi < 35 else 'bearish' if rsi > 60 else 'neutraal'})\n"
+                        f"EMA20: {ema20:.2f} ({'bullish' if bull_trend else 'bearish'})\n"
                         f"Koop signaal: {koop_signaal} ({koop_reden})\n"
                         f"Verkoop signaal: {verkoop_signaal} ({verkoop_reden})"
                     )
