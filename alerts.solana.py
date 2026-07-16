@@ -410,8 +410,13 @@ def main():
                     last_history_update = time.time()
 
                     # Market mode bijwerken via dagcandles (consistent met daganalyse)
-                    dag_candles = get_candles()
-                    dag_closes = [c["close"] for c in dag_candles]
+                    url_trend = "https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit=20"
+                    resp_trend = requests.get(url_trend)
+                    dag_candles_trend = []
+                    for c in resp_trend.json():
+                        dag_candles_trend.append({"close": float(c[4])})
+                    dag_candles_trend.reverse()
+                    dag_closes = [c["close"] for c in dag_candles_trend]
                     trend_dag = bepaal_trend(dag_closes)
                     if trend_dag == "dalend":
                         market_mode = "bearish"
