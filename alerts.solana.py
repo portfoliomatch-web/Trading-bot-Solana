@@ -409,11 +409,13 @@ def main():
                     btc_cache = []  # niet meer nodig, Bitvavo heeft geen BTC nodig
                     last_history_update = time.time()
 
-                    # Market mode bijwerken bij elke cache refresh
-                    trend_20d = bepaal_trend(sol_cache)
-                    if trend_20d == "dalend":
+                    # Market mode bijwerken via dagcandles (consistent met daganalyse)
+                    dag_candles = get_candles()
+                    dag_closes = [c["close"] for c in dag_candles]
+                    trend_dag = bepaal_trend(dag_closes)
+                    if trend_dag == "dalend":
                         market_mode = "bearish"
-                    elif trend_20d == "stijgend":
+                    elif trend_dag == "stijgend":
                         market_mode = "bullish"
                     else:
                         market_mode = "neutraal"
