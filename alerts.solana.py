@@ -464,11 +464,9 @@ def main():
                     near_low = sol_price <= low_7d * 1.05
 
                     sterke_buy = (
-                        koop_signaal
-                        and rsi < 35
-                        and near_low
+                        rsi < 35
                         and bull_trend
-                        and not drie_rode_candles(candles)
+                        and not drie_rode_candles(candles) 
                     )
 
                     if sterke_buy:
