@@ -464,7 +464,7 @@ def main():
                     near_low = sol_price <= low_7d * 1.05
 
                     sterke_buy = (
-                        rsi < 35
+                        rsi < 40
                         and bull_trend 
                     )
 
