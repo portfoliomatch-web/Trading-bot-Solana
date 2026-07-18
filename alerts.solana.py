@@ -481,7 +481,7 @@ def main():
                     high_7d = bereken_7d_high(candles)
                     near_high = sol_price >= high_7d * 0.95
 
-                    if verkoop_signaal and rsi > 60 and near_high and verkoop_window:
+                    if rsi > 55 and not bull_trend and verkoop_window:
                         send(f"📉 SELL signaal — {verkoop_reden} | RSI: {rsi:.1f}")
                         sell_all("(swing top)")
 
