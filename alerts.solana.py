@@ -465,8 +465,7 @@ def main():
 
                     sterke_buy = (
                         rsi < 35
-                        and bull_trend
-                        and not drie_rode_candles(candles) 
+                        and bull_trend 
                     )
 
                     if sterke_buy:
