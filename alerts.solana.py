@@ -23,17 +23,13 @@ trading_active = True
 last_update_id = None
 
 last_buy_price = None
-highest_price = None  # ✅ FIXED: Initialize this variable (was undefined)
-buy_time = None  # ✅ NEW: Track when we entered position
 market_mode = "neutraal"
 
-# ✅ IMPROVED PARAMETERS FOR SWING TRADING
-STOP_LOSS_PERCENT     = 0.08    # ✅ CHANGED: 8% stop loss (was 12% - tighter for swing trading)
-TAKE_PROFIT_PERCENT   = 0.07    # ✅ NEW: 7% take profit target
-RSI_BUY_THRESHOLD     = 35      # ✅ CHANGED: RSI < 35 (was 40 - stricter entry)
-RSI_SELL_THRESHOLD    = 65      # ✅ NEW: RSI > 65 in bearish = sell
-MAX_HOLD_DAYS         = 5       # ✅ NEW: Max 5 days holding
+# ✅ AANGEPAST: realistische fee-bewuste waarden
+STOP_LOSS_PERCENT     = 0.12    # 12% stop loss
+# Trailing verwijderd — bot verkoopt op 7 dagen high
 FEE                   = 0.0025  # Bitvavo taker fee 0.25%
+MIN_PROFIT_AFTER_FEE  = FEE * 2 + 0.005  # minimaal 1% netto winst
 
 last_analysis_day = None
 
@@ -188,7 +184,6 @@ def bereken_7d_low(candles):
 def bereken_7d_high(candles):
     highs = [c["high"] for c in candles[-7:]]
     return max(highs)   
-
 # =============================
 # TELEGRAM
 # =============================
@@ -292,7 +287,7 @@ def analyse_market():
     global market_mode
 
     sol_prices_7  = get_history("solana", 7)
-    sol_prices_20 = get_history("solana", 20)
+    sol_prices_20 = get_history("solana", 20)  # ✅ was 30, nu 20
 
     price = sol_prices_7[-1]
 
@@ -328,7 +323,7 @@ def analyse_market():
 # BUY
 # =============================
 def buy_all():
-    global last_buy_price, highest_price, buy_time
+    global last_buy_price, highest_price
 
     eur, _ = get_balances()
 
@@ -347,14 +342,13 @@ def buy_all():
         send(f"🟢 BUY @ €{price:.2f}\n{response}")
 
         last_buy_price = price
-        buy_time = time.time()  # ✅ NEW: Track entry time
         
 
 # =============================
 # SELL
 # =============================
 def sell_all(reden=""):
-    global last_buy_price, highest_price, buy_time
+    global last_buy_price, highest_price
 
     _, sol = get_balances()
 
@@ -380,7 +374,6 @@ def sell_all(reden=""):
         send(f"🔴 SELL @ €{price:.2f} {reden}{winst}\n{response}")
 
         last_buy_price = None
-        buy_time = None  # ✅ NEW: Clear entry time
         
 
 # =============================
@@ -388,9 +381,9 @@ def sell_all(reden=""):
 # =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
-    global sol_cache, btc_cache, last_history_update, market_mode, buy_time
+    global sol_cache, btc_cache, last_history_update, market_mode
 
-    send("🤖 Bot live 🚀 — ✅ IMPROVED Swing Trading Strategy\n📊 RSI<35 buy | +7% TP | -8% SL | 5d timeout")
+    send("🤖 Bot live 🚀 — Swing RSI strategie actief")
 
     while True:
         try:
@@ -416,10 +409,10 @@ def main():
             if time.time() - last_history_update > 300:
                 try:
                     sol_cache = get_history("solana", 50)
-                    btc_cache = []
+                    btc_cache = []  # niet meer nodig, Bitvavo heeft geen BTC nodig
                     last_history_update = time.time()
 
-                    # Market mode update via daily candles
+                    # Market mode bijwerken via dagcandles (consistent met daganalyse)
                     url_trend = "https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit=20"
                     resp_trend = requests.get(url_trend)
                     dag_candles_trend = []
@@ -450,7 +443,7 @@ def main():
             rsi = bereken_rsi(sol_cache)
             ema20 = ema(sol_cache, 20)
             ema50 = ema(sol_cache, 50)
-            bull_trend = ema20 > (ema50 + 0.15) or (ema20 > ema50 * 0.997)
+            bull_trend = ema20 > (ema50 + 0.15)
             candles = get_candles()
             koop_signaal, koop_reden = check_buy_signaal(candles)
             verkoop_signaal, verkoop_reden = check_sell_signaal(candles)
@@ -458,69 +451,43 @@ def main():
             eur, sol = get_balances()
 
             # =============================
-            # ✅ IMPROVED SWING STRATEGIE (24/7 TRADING)
+            # ✅ SWING STRATEGIE
             # =============================
             if trading_active:
 
-                # --- BUY (24/7, prefer 00:00-06:00 UTC) ---
+                # --- BUY ---
+                # Alleen kopen tussen 00:00 en 00:30 na sluiting dagcandle
+                koop_window = (now.hour == 0 and now.minute <= 30)  # middernacht
+                
                 if sol == 0 and eur > 5:
                     low_7d = bereken_7d_low(candles)
                     near_low = sol_price <= low_7d * 1.05
 
-                    # ✅ IMPROVED: RSI < 35 (stricter), checks market mode
                     sterke_buy = (
-                        rsi < RSI_BUY_THRESHOLD      # ✅ RSI < 35
+                        rsi < 40
                         and bull_trend 
-                        and market_mode != "bearish"
-                        and near_low                  # ✅ Price near support
                     )
 
                     if sterke_buy:
-                        koop_uur = now.hour
-                        if 0 <= koop_uur <= 6:
-                            print(f"[OPTIMAL BUY] RSI: {rsi:.1f}, Price: €{sol_price:.2f}, Mode: {market_mode} @ {koop_uur}:00")
-                            send(f"🟢 OPTIMAL BUY @ {koop_uur}:00 — {koop_reden} | RSI: {rsi:.1f} | Mode: {market_mode}")
-                        else:
-                            print(f"[BUY] RSI: {rsi:.1f}, Price: €{sol_price:.2f}, Mode: {market_mode} @ {koop_uur}:00 (off-peak)")
-                            send(f"🟢 BUY @ {koop_uur}:00 — {koop_reden} | RSI: {rsi:.1f}")
+                        send(f"📈 STRONG BUY — {koop_reden} | RSI: {rsi:.1f} | mode: {market_mode}")
                         buy_all()
 
-                # --- SELL (24/7, NO TIME LIMITS) ---
-                elif sol > 0 and last_buy_price:
+                # --- SELL ---
+                elif sol > 0:
 
-                    pct_change = ((sol_price - last_buy_price) / last_buy_price) * 100
-                    
-                    # ✅ PRIORITY 1: TAKE PROFIT @ +7% (MOST IMPORTANT!)
-                    if pct_change >= TAKE_PROFIT_PERCENT * 100:
-                        print(f"[TAKE PROFIT] +{pct_change:.2f}% @ €{sol_price:.2f}")
-                        send(f"💰 TAKE PROFIT +{pct_change:.2f}% @ €{sol_price:.2f}")
-                        sell_all("(take profit +7%)")
+                    # Swing top verkoop alleen om middernacht
+                    verkoop_window = (now.hour == 0 and now.minute <= 30)
 
-                    # ✅ PRIORITY 2: SWING SIGNAL (24/7, no time window!)
-                    elif verkoop_signaal:
-                        print(f"[SWING SELL] {verkoop_reden} @ €{sol_price:.2f}, Profit: {pct_change:.2f}%")
-                        send(f"📉 SWING SELL — {verkoop_reden} @ €{sol_price:.2f} | Profit: {pct_change:.2f}%")
-                        sell_all("(swing signal)")
+                    high_7d = bereken_7d_high(candles)
+                    near_high = sol_price >= high_7d * 0.95
 
-                    # ✅ PRIORITY 3: RSI OVERBOUGHT + bearish market
-                    elif rsi > RSI_SELL_THRESHOLD and market_mode == "bearish":
-                        print(f"[RSI EXIT] RSI {rsi:.1f} in bearish mode @ €{sol_price:.2f}")
-                        send(f"📉 RSI OVERBOUGHT ({rsi:.1f}) in bearish | Profit: {pct_change:.2f}%")
-                        sell_all("(rsi overbought bearish)")
+                    if rsi > 55 and not bull_trend and verkoop_window:
+                        send(f"📉 SELL signaal — {verkoop_reden} | RSI: {rsi:.1f}")
+                        sell_all("(swing top)")
 
-                    # ✅ PRIORITY 4: STOP LOSS @ -8% (SAFETY)
-                    elif sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
-                        stop_price = last_buy_price * (1 - STOP_LOSS_PERCENT)
-                        print(f"[STOP LOSS] {pct_change:.2f}% @ €{sol_price:.2f} (limit: €{stop_price:.2f})")
-                        send(f"🛑 STOP LOSS {pct_change:.2f}% @ €{sol_price:.2f}")
-                        sell_all("(stop loss -8%)")
-
-                    # ✅ PRIORITY 5: TIME LIMIT @ 5 dagen (EXIT DISCIPLINE)
-                    elif buy_time and (time.time() - buy_time) > (MAX_HOLD_DAYS * 24 * 60 * 60):
-                        days_held = int((time.time() - buy_time) / (24 * 60 * 60))
-                        print(f"[TIME LIMIT] {days_held} days held, Profit: {pct_change:.2f}%")
-                        send(f"⏰ TIME LIMIT ({days_held}d) | Profit: {pct_change:.2f}% @ €{sol_price:.2f}")
-                        sell_all("(5 day timeout)")
+                    # Stop loss
+                    elif last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
+                        sell_all("(stop loss)")
 
             # =============================
             # COMMANDS
@@ -532,39 +499,31 @@ def main():
 
                 elif "/update" in msg:
                     totaal = eur + (sol * sol_price)
-                    status = "🟢 HOLDING" if sol > 0 else "🔴 CASH"
-                    buy_info = ""
-                    if sol > 0 and last_buy_price:
-                        pct = ((sol_price - last_buy_price) / last_buy_price) * 100
-                        buy_info = f"\nEntry: €{last_buy_price:.2f} | Profit: {pct:.2f}%"
+                    status = "BUY" if sol > 0 else "SELL"
                     send(
                         f"📊 Update\n"
                         f"Koers: €{sol_price:.2f}\n"
                         f"Status: {status}\n"
-                        f"Saldo: €{totaal:.2f}{buy_info}\n"
+                        f"Saldo: €{totaal:.2f}\n"
                         f"===========================\n"
-                        f"RSI: {rsi:.1f} ({'oversold <35' if rsi < 35 else 'overbought >65' if rsi > 65 else 'neutral'})\n"
-                        f"EMA20/50: {ema20:.2f} / {ema50:.2f} ({'bullish ↑' if bull_trend else 'bearish ↓'})\n"
-                        f"Market Mode: {market_mode}\n"
-                        f"Buy Signal: {koop_signaal} ({koop_reden})\n"
-                        f"Sell Signal: {verkoop_signaal} ({verkoop_reden})"
+                        f"RSI: {rsi:.1f} ({'bullish' if rsi < 40 else 'bearish' if rsi > 60 else 'neutraal'})\n"
+                        f"EMA20: {ema20:.2f} ({'bullish' if bull_trend else 'bearish'})\n"
+                        f"Koop signaal: {koop_signaal} ({koop_reden})\n"
+                        f"Verkoop signaal: {verkoop_signaal} ({verkoop_reden})"
                     )
                 elif "/sell" in msg:
-                    sell_all("(manual)")
+                    sell_all("(handmatig)")
                 elif "/buy" in msg:
                     buy_all()
-                    send("🟢 Manual BUY executed")
+                    send("🟢 Handmatige BUY uitgevoerd")
                 elif "/rsi" in msg:
-                    send(f"RSI: {rsi:.1f}\nBuy: {koop_signaal} ({koop_reden})\nSell: {verkoop_signaal} ({verkoop_reden})\nMode: {market_mode}")
+                    send(f"RSI: {rsi:.1f}\nKoop signaal: {koop_signaal} ({koop_reden})\nVerkoop signaal: {verkoop_signaal} ({verkoop_reden})")
                 elif "/reset" in msg:
                     last_buy_price = None
                     highest_price = None
-                    buy_time = None
-                    send("🔄 Reset — ready to trade")
+                    send("🔄 Reset gedaan — bot staat op SELL")
         except Exception as e:
-            print("Error:", e)
-            import traceback
-            traceback.print_exc()
+            print("Fout:", e)
 
         time.sleep(15)
 
