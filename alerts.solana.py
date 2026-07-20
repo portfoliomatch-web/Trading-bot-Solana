@@ -460,12 +460,11 @@ def main():
                 koop_window = (now.hour == 0 and now.minute <= 30)  # middernacht
                 
                 if sol == 0 and eur > 5:
-                    low_7d = bereken_7d_low(candles)
-                    near_low = sol_price <= low_7d * 1.05
 
                     sterke_buy = (
                         rsi < 40
-                        and bull_trend 
+                        and bull_trend
+                        and koop_window
                     )
 
                     if sterke_buy:
