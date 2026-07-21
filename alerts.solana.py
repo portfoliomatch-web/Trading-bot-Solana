@@ -150,11 +150,12 @@ def get_price():
 
 def get_history(coin, days):
     url = f"https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit={days}"
-    print("Candles status:", response.status_code)
+    response = requests.get(url)
     data = response.json()
     prices = [float(candle[4]) for candle in data]
     prices.reverse()
     return prices
+
 
 # =============================
 # BALANCE
