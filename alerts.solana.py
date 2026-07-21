@@ -81,109 +81,8 @@ def ema(prices, period):
 # =============================
 # SWING SIGNAAL
 # =============================
-def get_candles():
-    url = "https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit=10"
-    response = requests.get(url)
-    data = response.json()
-    candles = []
-    for c in data:
-        candles.append({
-            "open":  float(c[1]),
-            "high":  float(c[2]),
-            "low":   float(c[3]),
-            "close": float(c[4]),
-        })
-    candles.reverse()
-    return candles
+# Verwijderd — bot gebruikt Golden Cross/Death Cross
 
-def is_green(c):
-    return c["close"] > c["open"]
-
-def is_red(c):
-    return c["close"] < c["open"]
-
-def is_hammer(c):
-    body = abs(c["close"] - c["open"])
-    lower_wick = min(c["open"], c["close"]) - c["low"]
-    upper_wick = c["high"] - max(c["open"], c["close"])
-    if body == 0:
-        return False
-    return lower_wick >= 2 * body and upper_wick <= body
-
-def is_shooting_star(c):
-    body = abs(c["close"] - c["open"])
-    upper_wick = c["high"] - max(c["open"], c["close"])
-    lower_wick = min(c["open"], c["close"]) - c["low"]
-    if body == 0:
-        return False
-    return upper_wick >= 2 * body and lower_wick <= body
-
-def is_bullish_engulfing(c_prev, c_curr):
-    return (
-        is_red(c_prev)
-        and is_green(c_curr)
-        and c_curr["open"] < c_prev["close"]
-        and c_curr["close"] > c_prev["open"]
-    )
-
-def is_bearish_engulfing(c_prev, c_curr):
-    return (
-        is_green(c_prev)
-        and is_red(c_curr)
-        and c_curr["open"] > c_prev["close"]
-        and c_curr["close"] < c_prev["open"]
-    )
-
-def drie_rode_candles(candles):
-    if len(candles) < 3:
-        return False
-    return (
-        is_red(candles[-1])
-        and is_red(candles[-2])
-        and is_red(candles[-3])
-    )
-
-def check_buy_signaal(candles):
-    if len(candles) < 2:
-        return False, ""
-    c_prev = candles[-2]
-    c_curr = candles[-1]
-    midden_rood = (c_prev["open"] + c_prev["close"]) / 2
-
-    if is_green(c_prev) and is_green(c_curr) and c_curr["close"] > c_prev["close"]:
-        return True, "2 groene candles stijgend"
-    if is_red(c_prev) and is_green(c_curr) and c_curr["close"] > midden_rood:
-        return True, "groene candle boven midden rode"
-    if is_red(c_prev) and is_hammer(c_curr):
-        return True, "hammer na rode candle"
-    if is_bullish_engulfing(c_prev, c_curr):
-        return True, "bullish engulfing"
-    return False, ""
-
-def check_sell_signaal(candles):
-    if len(candles) < 2:
-        return False, ""
-    c_prev = candles[-2]
-    c_curr = candles[-1]
-    midden_groen = (c_prev["open"] + c_prev["close"]) / 2
-
-    if is_green(c_prev) and is_red(c_curr) and c_curr["close"] < midden_groen:
-        return True, "rode candle onder midden groene"
-    if is_green(c_prev) and is_shooting_star(c_curr):
-        return True, "shooting star na groene candle"
-    if is_bearish_engulfing(c_prev, c_curr):
-        return True, "bearish engulfing"
-    return False, ""
-
-def bereken_support(candles):
-    lows = [c["low"] for c in candles]
-    return min(lows[-20:])
-def bereken_7d_low(candles):
-    lows = [c["low"] for c in candles[-7:]]
-    return min(lows)
-def bereken_7d_high(candles):
-    highs = [c["high"] for c in candles[-7:]]
-    return max(highs)   
 # =============================
 # TELEGRAM
 # =============================
@@ -250,9 +149,7 @@ def get_price():
     raise Exception(f"Price not found in response: {response}")
 
 def get_history(coin, days):
-    limit = days * 6  # 4h candles: 6 per dag
-    url = f"https://api.bitvavo.com/v2/SOL-EUR/candles?interval=4h&limit={limit}"
-    response = requests.get(url)
+    url = f"https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit={days}"response = requests.get(url)
     print("Candles status:", response.status_code)
     data = response.json()
     prices = [float(candle[4]) for candle in data]
@@ -440,57 +337,34 @@ def main():
             # =============================
             # RSI + SWING SIGNALEN
             # =============================
-            rsi = bereken_rsi(sol_cache)
             ema20 = ema(sol_cache, 20)
             ema50 = ema(sol_cache, 50)
-            bull_trend = ema20 > ema50  # zonder buffer
-            candles = get_candles()
-            koop_signaal, koop_reden = check_buy_signaal(candles)
-            verkoop_signaal, verkoop_reden = check_sell_signaal(candles)
-
+            bull_trend = ema20 > ema50
             eur, sol = get_balances()
+
 
             # =============================
             # ✅ SWING STRATEGIE
             # =============================
             if trading_active:
 
-                # --- BUY ---
-                # Alleen kopen tussen 00:00 en 00:30 na sluiting dagcandle
-                koop_window = (
-                    (now.hour == 0 and now.minute <= 30) or
-                    (now.hour == 6 and now.minute <= 30)
-                )
-                
+                # --- BUY: Golden Cross ---
                 if sol == 0 and eur > 5:
-
-                    sterke_buy = (
-                        rsi < 40
-                        and bull_trend
-                        and koop_window
-                    )
-
-                    if sterke_buy:
-                        send(f"📈 STRONG BUY — {koop_reden} | RSI: {rsi:.1f} | mode: {market_mode}")
+                    if bull_trend:
+                        send(f"📈 GOLDEN CROSS BUY — EMA20: {ema20:.2f} boven EMA50: {ema50:.2f}")
                         buy_all()
 
-                # --- SELL ---
+                # --- SELL: Death Cross ---
                 elif sol > 0:
-
-                    # Swing top verkoop alleen om middernacht
-                    verkoop_window = (now.hour == 0 and now.minute <= 30)
-
-                    high_7d = bereken_7d_high(candles)
-                    near_high = sol_price >= high_7d * 0.95
-
-                    if rsi > 55 and not bull_trend and verkoop_window:
-                        send(f"📉 SELL signaal — {verkoop_reden} | RSI: {rsi:.1f}")
-                        sell_all("(swing top)")
+                    if not bull_trend:
+                        send(f"📉 DEATH CROSS SELL — EMA20: {ema20:.2f} onder EMA50: {ema50:.2f}")
+                        sell_all("(death cross)")
 
                     # Stop loss
                     elif last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
                         sell_all("(stop loss)")
-
+                        
+                        
             # =============================
             # COMMANDS
             # =============================
@@ -502,17 +376,21 @@ def main():
                 elif "/update" in msg:
                     totaal = eur + (sol * sol_price)
                     status = "BUY" if sol > 0 else "SELL"
+                    winst = ""
+                    if sol > 0 and last_buy_price:
+                        pct = ((sol_price - last_buy_price) / last_buy_price) * 100
+                        winst = f"\nEntry: €{last_buy_price:.2f} | Winst: {pct:.2f}%"
                     send(
                         f"📊 Update\n"
                         f"Koers: €{sol_price:.2f}\n"
                         f"Status: {status}\n"
-                        f"Saldo: €{totaal:.2f}\n"
+                        f"Saldo: €{totaal:.2f}{winst}\n"
                         f"===========================\n"
-                        f"RSI: {rsi:.1f} ({'bullish' if rsi < 40 else 'bearish' if rsi > 60 else 'neutraal'})\n"
-                        f"EMA20: {ema20:.2f} ({'bullish' if bull_trend else 'bearish'})\n"
-                        f"Koop signaal: {koop_signaal} ({koop_reden})\n"
-                        f"Verkoop signaal: {verkoop_signaal} ({verkoop_reden})"
+                        f"EMA20: {ema20:.2f}\n"
+                        f"EMA50: {ema50:.2f}\n"
+                        f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}"
                     )
+                
                 elif "/sell" in msg:
                     sell_all("(handmatig)")
                 elif "/buy" in msg:
