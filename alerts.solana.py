@@ -443,7 +443,7 @@ def main():
             rsi = bereken_rsi(sol_cache)
             ema20 = ema(sol_cache, 20)
             ema50 = ema(sol_cache, 50)
-            bull_trend = ema20 > (ema50 + 0.15)
+            bull_trend = ema20 > ema50  # zonder buffer
             candles = get_candles()
             koop_signaal, koop_reden = check_buy_signaal(candles)
             verkoop_signaal, verkoop_reden = check_sell_signaal(candles)
