@@ -149,7 +149,8 @@ def get_price():
     raise Exception(f"Price not found in response: {response}")
 
 def get_history(coin, days):
-    url = f"https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit={days}"response = requests.get(url)
+    def get_history(coin, days):
+    url = f"https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit={days}"
     print("Candles status:", response.status_code)
     data = response.json()
     prices = [float(candle[4]) for candle in data]
