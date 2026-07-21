@@ -457,7 +457,10 @@ def main():
 
                 # --- BUY ---
                 # Alleen kopen tussen 00:00 en 00:30 na sluiting dagcandle
-                koop_window = (now.hour == 0 and now.minute <= 30)  # middernacht
+                koop_window = (
+                    (now.hour == 0 and now.minute <= 30) or
+                    (now.hour == 6 and now.minute <= 30)
+                )
                 
                 if sol == 0 and eur > 5:
 
