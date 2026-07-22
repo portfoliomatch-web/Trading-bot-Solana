@@ -381,16 +381,19 @@ def main():
                     if sol > 0 and last_buy_price:
                         pct = ((sol_price - last_buy_price) / last_buy_price) * 100
                         winst = f"\nEntry: €{last_buy_price:.2f} | Winst: {pct:.2f}%"
+                    signaal = "⚠️ KOOP SIGNAAL" if bull_trend else "⚠️ VERKOOP SIGNAAL"
                     send(
                         f"📊 Update\n"
                         f"Koers: €{sol_price:.2f}\n"
                         f"Status: {status}\n"
                         f"Saldo: €{totaal:.2f}{winst}\n"
                         f"===========================\n"
-                        f"EMA20: {ema20:.2f}\n"
-                        f"EMA50: {ema50:.2f}\n"
-                        f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}"
+                        f"EMA7: {ema20:.2f}\n"
+                        f"EMA20: {ema50:.2f}\n"
+                        f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}\n"
+                        f"Signaal: {signaal}"
                     )
+                
                 elif "/pauzeon" in msg:
                     trading_active = False
                     send("⏸️ Bot gepauzeerd — geen trades")
