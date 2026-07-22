@@ -26,7 +26,7 @@ last_buy_price = None
 market_mode = "neutraal"
 
 # ✅ AANGEPAST: realistische fee-bewuste waarden
-STOP_LOSS_PERCENT     = 0.12    # 12% stop loss
+STOP_LOSS_PERCENT     = 0.06    # 6% stop loss
 # Trailing verwijderd — bot verkoopt op 7 dagen high
 FEE                   = 0.0025  # Bitvavo taker fee 0.25%
 MIN_PROFIT_AFTER_FEE  = FEE * 2 + 0.005  # minimaal 1% netto winst
