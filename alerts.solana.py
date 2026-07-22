@@ -341,6 +341,7 @@ def main():
             ema20 = ema(sol_cache, 7)
             ema50 = ema(sol_cache, 20)
             bull_trend = ema20 > ema50
+            candle_kleur = "🟢 Groen" if sol_cache[-1] > sol_cache[-2] else "🔴 Rood"
             eur, sol = get_balances()
 
 
@@ -391,7 +392,9 @@ def main():
                         f"EMA7: {ema20:.2f}\n"
                         f"EMA20: {ema50:.2f}\n"
                         f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}\n"
+                        f"Candle: {candle_kleur}\n"
                         f"Signaal: {signaal}"
+                        
                     )
                 
                 elif "/pauzeon" in msg:
