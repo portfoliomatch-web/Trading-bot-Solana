@@ -1,6 +1,6 @@
 import requests
 import time
-import o. s
+import os
 import hmac
 import hashlib
 import json
