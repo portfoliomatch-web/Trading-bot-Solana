@@ -349,27 +349,22 @@ def main():
             # =============================
             if trading_active:
 
-                # --- BUY: Golden Cross ---
-                # --- BUY: Golden Cross ---
+                # --- SIGNALEN ONLY MODE ---
                 koop_window = (
                     (now.hour == 0 and now.minute <= 30) or
                     (now.hour == 6 and now.minute <= 30)
                 )
-                if sol == 0 and eur > 5 and koop_window:
+                if koop_window:
                     if bull_trend:
-                        send(f"📈 GOLDEN CROSS BUY — EMA20: {ema20:.2f} boven EMA50: {ema50:.2f}")
-                        buy_all()
+                        send(f"⚠️ KOOP SIGNAAL — EMA7: {ema20:.2f} boven EMA20: {ema50:.2f} | SOL: €{sol_price:.2f}")
+                    elif not bull_trend:
+                        send(f"⚠️ VERKOOP SIGNAAL — EMA7: {ema20:.2f} onder EMA20: {ema50:.2f} | SOL: €{sol_price:.2f}")
 
-                # --- SELL: Death Cross ---
-                elif sol > 0:
-                    if not bull_trend:
-                        send(f"📉 DEATH CROSS SELL — EMA20: {ema20:.2f} onder EMA50: {ema50:.2f}")
-                        sell_all("(death cross)")
-
-                    # Stop loss
-                    elif last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
-                        sell_all("(stop loss)")
-                        
+                # Stop loss blijft actief
+                if sol > 0 and last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
+                    sell_all("(stop loss)")
+                    
+                    
                         
             # =============================
             # COMMANDS
