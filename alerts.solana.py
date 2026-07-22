@@ -338,8 +338,8 @@ def main():
             # =============================
             # RSI + SWING SIGNALEN
             # =============================
-            ema20 = ema(sol_cache, 20)
-            ema50 = ema(sol_cache, 50)
+            ema20 = ema(sol_cache, 7)
+            ema50 = ema(sol_cache, 20)
             bull_trend = ema20 > ema50
             eur, sol = get_balances()
 
