@@ -350,7 +350,12 @@ def main():
             if trading_active:
 
                 # --- BUY: Golden Cross ---
-                if sol == 0 and eur > 5:
+                # --- BUY: Golden Cross ---
+                koop_window = (
+                    (now.hour == 0 and now.minute <= 30) or
+                    (now.hour == 6 and now.minute <= 30)
+                )
+                if sol == 0 and eur > 5 and koop_window:
                     if bull_trend:
                         send(f"📈 GOLDEN CROSS BUY — EMA20: {ema20:.2f} boven EMA50: {ema50:.2f}")
                         buy_all()
@@ -391,7 +396,14 @@ def main():
                         f"EMA50: {ema50:.2f}\n"
                         f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}"
                     )
-                
+                elif "/pauzeon" in msg:
+                    trading_active = False
+                    send("⏸️ Bot gepauzeerd — geen trades")
+
+                elif "/pauzeoff" in msg:
+                    trading_active = True
+                    send("▶️ Bot actief — trades hervat")
+                    
                 elif "/sell" in msg:
                     sell_all("(handmatig)")
                 elif "/buy" in msg:
