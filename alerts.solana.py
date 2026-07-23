@@ -395,7 +395,8 @@ def main():
                         f"EMA20: {ema50:.2f}\n"
                         f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}\n"
                         f"Candle: {candle_kleur}\n"
-                        f"Signaal: {signaal}"
+                        f"Signaal: {'⚠️ KOOP SIGNAAL' if bull_trend and candle_kleur == '🟢 Groen' else '⚠️ VERKOOP SIGNAAL' if not bull_trend and candle_kleur == '🔴 Rood' else '⏸️ Geen signaal'}"
+                    
                         
                     )
                 
