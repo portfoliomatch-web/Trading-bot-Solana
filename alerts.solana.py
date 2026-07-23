@@ -340,7 +340,7 @@ def main():
             # =============================
             ema20 = ema(sol_cache, 7)
             ema50 = ema(sol_cache, 20)
-            bull_trend = ema20 > ema50
+            bull_trend = ema20 > (ema50 + 0.50)
             candle_kleur = "🟢 Groen" if sol_cache[-1] > sol_cache[-2] else "🔴 Rood"
             eur, sol = get_balances()
 
