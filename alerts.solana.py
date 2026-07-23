@@ -355,11 +355,12 @@ def main():
                     (now.hour == 0 and now.minute <= 30) or
                     (now.hour == 6 and now.minute <= 30)
                 )
-                if koop_window:
+                if koop_window and now.minute == 0:
                     if bull_trend:
                         send(f"⚠️ KOOP SIGNAAL — EMA7: {ema20:.2f} boven EMA20: {ema50:.2f} | SOL: €{sol_price:.2f}")
                     elif not bull_trend:
                         send(f"⚠️ VERKOOP SIGNAAL — EMA7: {ema20:.2f} onder EMA20: {ema50:.2f} | SOL: €{sol_price:.2f}")
+                        
 
                 # Stop loss blijft actief
                 if sol > 0 and last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
