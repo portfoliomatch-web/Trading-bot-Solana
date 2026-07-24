@@ -82,8 +82,20 @@ def ema(prices, period):
 # =============================
 # SWING SIGNAAL
 # =============================
-# Verwijderd — bot gebruikt Golden Cross/Death Cross
-
+def get_candles():
+    url = "https://api.bitvavo.com/v2/SOL-EUR/candles?interval=1d&limit=30"
+    response = requests.get(url)
+    data = response.json()
+    candles = []
+    for c in data:
+        candles.append({
+            "open":  float(c[1]),
+            "high":  float(c[2]),
+            "low":   float(c[3]),
+            "close": float(c[4]),
+        })
+    candles.reverse()
+    return candles
 # =============================
 # TELEGRAM
 # =============================
