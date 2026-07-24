@@ -389,10 +389,29 @@ def main():
 
                 if near_support and laatste_zone != "support":
                     laatste_zone = "support"
-                    send(f"🟢 KOOP ZONE — SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}")
+                    if bull_trend and candle_kleur == "🟢 Groen":
+                        send(
+                            f"🚀 ALLES GROEN — KOOP SIGNAAL\n"
+                            f"SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}\n"
+                            f"Trend: 🟢 Bullish | Candle: 🟢 Groen\n\n"
+                            f"📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE\n"
+                            f"✅ Kopen: 10+ Buy"
+                        )
+                    else:
+                        send(f"🟢 KOOP ZONE — SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}")
                 elif near_resistance and laatste_zone != "resistance":
                     laatste_zone = "resistance"
-                    send(f"🔴 VERKOOP ZONE — SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}")
+                    if not bull_trend and candle_kleur == "🔴 Rood":
+                        send(
+                            f"🚨 ALLES ROOD — VERKOOP SIGNAAL\n"
+                            f"SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}\n"
+                            f"Trend: 🔴 Bearish | Candle: 🔴 Rood\n\n"
+                            f"📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE\n"
+                            f"❌ Verkopen: 10+ Sell"
+                        )
+                    else:
+                        send(f"🔴 VERKOOP ZONE — SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}")
+                    
                 elif not near_support and not near_resistance:
                     laatste_zone = None
 
