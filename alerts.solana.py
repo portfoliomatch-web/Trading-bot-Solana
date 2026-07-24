@@ -281,8 +281,10 @@ def sell_all(reden=""):
 def main():
     global trading_active, last_buy_price, last_analysis_day
     global sol_cache, btc_cache, last_history_update, market_mode
+    global laatste_zone
 
-    send("🤖 Bot live 🚀 — Swing RSI strategie actief")
+
+    send("🤖 Bot live 🚀 — Swing strategie actief")
 
     while True:
         try:
