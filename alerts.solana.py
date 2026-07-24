@@ -421,13 +421,15 @@ def main():
                         f"Koers: €{sol_price:.2f}\n"
                         f"Status: {status}\n"
                         f"Saldo: €{totaal:.2f}{winst}\n"
-                        f"===========================\n"
+                        f"=========================\n"
                         f"EMA7: {ema20:.2f}\n"
                         f"EMA20: {ema50:.2f}\n"
                         f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}\n"
                         f"Candle: {candle_kleur}\n"
                         f"Zone: {'🟢 Koop zone' if near_support else '🔴 Verkoop zone' if near_resistance else '⏸️ Geen zone'}\n"
+                        f"\n"
                         f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}"
+                        f"=========================\n"
                         f"\n📊 Check Moving Averages (4H):\nhttps://bit.ly/Solana_Swing\n✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
                     
                         
