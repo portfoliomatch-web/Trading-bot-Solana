@@ -1,4 +1,4 @@
-import requests
+ui import requests
 import time
 import os
 import hmac
@@ -372,10 +372,14 @@ def main():
                 recent_lows = [c["low"] for c in candles[-14:]]
                 recent_highs = [c["high"] for c in candles[-14:]]
                 
-                # Laagste punt van laatste 3 dagen = recente bodem
-                low_7d = min(c["low"] for c in candles[-3:])
-                # Hoogste punt van laatste 3 dagen = recente top  
-                high_7d = max(c["high"] for c in candles[-3:])
+                # Bearish → laagste low zoeken
+                # Bullish → hoogste high zoeken
+                if not bull_trend:
+                    low_7d = min(c["low"] for c in candles[-14:])
+                    high_7d = max(c["high"] for c in candles[-3:])
+                else:
+                    low_7d = min(c["low"] for c in candles[-3:])
+                    high_7d = max(c["high"] for c in candles[-14:])
                 
                 
                 
