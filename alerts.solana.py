@@ -354,10 +354,13 @@ def main():
             if trading_active:
 
                 # 24/7 support/resistance melding
-                low_7d = min(sol_cache[-7:])
-                high_7d = max(sol_cache[-7:])
-                near_support = sol_price <= low_7d + 1.50
-                near_resistance = sol_price >= high_7d - 1.50
+                candles = get_candles()
+                low_7d = min(c["low"] for c in candles[-7:])
+                high_7d = max(c["high"] for c in candles[-7:])
+                
+                
+                near_support = sol_price <= low_7d + 1.00
+                near_resistance = sol_price >= high_7d - 1.00
 
                 if near_support and laatste_zone != "support":
                     laatste_zone = "support"
