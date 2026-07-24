@@ -226,7 +226,7 @@ def analyse_market():
         f"Trend 20d: {trend_20d}\n"
         f"RSI (14):  {rsi:.1f}\n\n"
         f"Market mode: {market_mode}\n"
-        f"\n📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE\n✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
+        
     )
 
     return bericht
@@ -428,7 +428,7 @@ def main():
                         f"Candle: {candle_kleur}\n"
                         f"Zone: {'🟢 Koop zone' if near_support else '🔴 Verkoop zone' if near_resistance else '⏸️ Geen zone'}\n"
                         f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}"
-                      
+                        f"\n📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE\n✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
                     
                         
                     )
