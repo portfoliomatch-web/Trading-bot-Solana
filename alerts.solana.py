@@ -355,8 +355,16 @@ def main():
 
                 # 24/7 support/resistance melding
                 candles = get_candles()
-                low_7d = min(c["low"] for c in candles[-7:])
-                high_7d = max(c["high"] for c in candles[-7:])
+                
+                # Laatste lokale high en low vanaf vandaag terugkijkend
+                recent_lows = [c["low"] for c in candles[-14:]]
+                recent_highs = [c["high"] for c in candles[-14:]]
+                
+                # Laagste punt van laatste 3 dagen = recente bodem
+                low_7d = min(c["low"] for c in candles[-3:])
+                # Hoogste punt van laatste 3 dagen = recente top  
+                high_7d = max(c["high"] for c in candles[-3:])
+                
                 
                 
                 near_support = sol_price <= low_7d + 1.00
