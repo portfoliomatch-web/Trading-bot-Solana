@@ -31,7 +31,8 @@ STOP_LOSS_PERCENT     = 0.06    # 6% stop loss
 FEE                   = 0.0025  # Bitvavo taker fee 0.25%
 MIN_PROFIT_AFTER_FEE  = FEE * 2 + 0.005  # minimaal 1% netto winst
 
-last_analysis_day = None
+laatste_zone = None
+
 
 # =============================
 # CACHE (ANTI 429)
@@ -345,30 +346,30 @@ def main():
             eur, sol = get_balances()
 
 
-            # =============================
+           # =============================
             # ✅ SWING STRATEGIE
             # =============================
             if trading_active:
 
-                # --- SIGNALEN ONLY MODE ---
-                koop_window = (
-                    (now.hour == 0 and now.minute <= 30) or
-                    (now.hour == 6 and now.minute <= 30)
-                )
-                if koop_window and now.minute == 0:
-                    if bull_trend and candle_kleur == "🟢 Groen":
-                        send(f"⚠️ KOOP SIGNAAL — EMA7: {ema20:.2f} | SOL: €{sol_price:.2f}")
-                    elif not bull_trend and candle_kleur == "🔴 Rood":
-                        send(f"⚠️ VERKOOP SIGNAAL — EMA7: {ema20:.2f} | SOL: €{sol_price:.2f}")
-                        
-            
+                # 24/7 support/resistance melding
+                low_7d = min(sol_cache[-7:])
+                high_7d = max(sol_cache[-7:])
+                near_support = sol_price <= low_7d + 1.50
+                near_resistance = sol_price >= high_7d - 1.50
+
+                if near_support and laatste_zone != "support":
+                    laatste_zone = "support"
+                    send(f"🟢 KOOP ZONE — SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}")
+                elif near_resistance and laatste_zone != "resistance":
+                    laatste_zone = "resistance"
+                    send(f"🔴 VERKOOP ZONE — SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}")
+                elif not near_support and not near_resistance:
+                    laatste_zone = None
 
                 # Stop loss blijft actief
                 if sol > 0 and last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
                     sell_all("(stop loss)")
                     
-                    
-                        
             # =============================
             # COMMANDS
             # =============================
@@ -395,7 +396,9 @@ def main():
                         f"EMA20: {ema50:.2f}\n"
                         f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}\n"
                         f"Candle: {candle_kleur}\n"
-                        f"Signaal: {'⚠️ KOOP SIGNAAL' if bull_trend and candle_kleur == '🟢 Groen' else '⚠️ VERKOOP SIGNAAL' if not bull_trend and candle_kleur == '🔴 Rood' else '⏸️ Geen signaal'}"
+                        f"Zone: {'🟢 Koop zone' if near_support else '🔴 Verkoop zone' if near_resistance else '⏸️ Geen zone'}\n"
+                        f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}"
+                      
                     
                         
                     )
