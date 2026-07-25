@@ -394,7 +394,7 @@ def main():
                             f"🚀 ALLES GROEN — KOOP SIGNAAL\n"
                             f"SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}\n"
                             f"Trend: 🟢 Bullish | Candle: 🟢 Groen\n\n"
-                            f"📊 Check Moving Averages (4H):\nhttps://bit.ly/4vPktJI\n"
+                            f"📊 Check Moving Averages (4H):\nhttps://bit.ly/4vKIbqr\n"
                             f"✅ Kopen: 10+ Buy"
                         )
                     else:
@@ -406,7 +406,7 @@ def main():
                             f"🚨 ALLES ROOD — VERKOOP SIGNAAL\n"
                             f"SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}\n"
                             f"Trend: 🔴 Bearish | Candle: 🔴 Rood\n\n"
-                            f"📊 Check Moving Averages (4H):\nhttps://bit.ly/4vPktJI\n"
+                            f"📊 Check Moving Averages (4H):\nhttps://bit.ly/4vKIbqr\n"
                             f"❌ Verkopen: 10+ Sell"
                         )
                     else:
@@ -449,7 +449,7 @@ def main():
                         f"\n"
                         f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}\n"
                         f"=========================\n"
-                        f"\n📊 Check Moving Averages (4H):\nhttps://bit.ly/4vPktJI\n✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
+                        f"\n📊 Check Moving Averages (4H):\nhttps://bit.ly/4vKIbqr\n✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
                     
                         
                     )
