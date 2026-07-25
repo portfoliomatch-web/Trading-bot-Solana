@@ -80,21 +80,6 @@ def ema(prices, period):
     return ema_value
 
 # =============================
-# NIEUW: 4HRS MOVING AVERAGES FUNCTIES
-# =============================
-def get_4h_candles():
-    try:
-        url = "https://bitvavo.com"
-        response = requests.get(url)
-        data = response.json()
-        prices = [float(candle[4]) for candle in data]
-        prices.reverse()
-        return prices
-    except Exception as e:
-        print("Fout bij ophalen 4H data:", e)
-        return []
-
-# =============================
 # SWING SIGNAAL
 # =============================
 def get_candles():
@@ -232,12 +217,6 @@ def analyse_market():
     else:
         market_mode = "neutraal"
 
-    # NIEUW: Bereken de live 4H EMA-waarden voor het overzicht
-    prijzen_4h = get_4h_candles()
-    ema20_4h = ema(prijzen_4h, 20)
-    ema50_4h = ema(prijzen_4h, 50)
-
-    
     bericht = (
         f"📊 Daganalyse Solana\n\n"
         f"Koers: €{price:.2f}\n"
@@ -247,9 +226,7 @@ def analyse_market():
         f"Trend 20d: {trend_20d}\n"
         f"RSI (14):  {rsi:.1f}\n\n"
         f"Market mode: {market_mode}\n"
-        f"📊 Moving Averages (4H):\n"
-        f"EMA20 (4H): €{ema20_4h:.2f}\n"
-        f"EMA50 (4H): €{ema50_4h:.2f}\n"
+        
     )
 
     return bericht
@@ -451,11 +428,6 @@ def main():
                     send(analyse_market())
 
                 elif "/update" in msg:
-                    # 🟢 HIER WORDEN DE LIVE 4H EMA'S BEREKEND VOOR JOUW UPDATE COMMANDO:
-                    prijzen_4h = get_4h_candles()
-                    ema20_4h = ema(prijzen_4h, 20)
-                    ema50_4h = ema(prijzen_4h, 50)
-                    
                     totaal = eur + (sol * sol_price)
                     status = "BUY" if sol > 0 else "SELL"
                     winst = ""
@@ -478,9 +450,7 @@ def main():
                         f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}\n"
                         f"=========================\n"
                         f"\n📊 Check Moving Averages (4H):\nhttps://bit.ly/Solana_Swing\n✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
-                        f"📊 Moving Averages (4H):\n"
-                        f"EMA20 (4H): €{ema20_4h:.2f}\n"
-                        f"EMA50 (4H): €{ema50_4h:.2f}\n"
+                    
                         
                     )
                 
