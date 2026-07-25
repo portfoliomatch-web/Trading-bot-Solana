@@ -435,11 +435,19 @@ def main():
                         pct = ((sol_price - last_buy_price) / last_buy_price) * 100
                         winst = f"\nEntry: €{last_buy_price:.2f} | Winst: {pct:.2f}%"
                     signaal = "⚠️ KOOP SIGNAAL" if bull_trend else "⚠️ VERKOOP SIGNAAL"
+                    
+                    winst_info = ""
+                    if sol > 0 and last_buy_price:
+                        pct = ((sol_price - last_buy_price) / last_buy_price) * 100
+                        netto = pct - (FEE * 2 * 100)
+                        winst_info = f"\nEntry: €{last_buy_price:.2f} | Winst: {pct:.2f}% ({netto:.2f}% netto)"
+
                     send(
                         f"📊 Update\n"
                         f"Koers: €{sol_price:.2f}\n"
-                        f"Status: {status}\n"
-                        f"Saldo: €{totaal:.2f}{winst}\n"
+                        f"Status: {status}{winst_info}\n"
+                        f"Saldo: €{totaal:.2f}\n"
+                    
                         f"=========================\n"
                         f"EMA7: {ema20:.2f}\n"
                         f"EMA20: {ema50:.2f}\n"
