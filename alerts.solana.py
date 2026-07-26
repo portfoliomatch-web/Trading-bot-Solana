@@ -376,11 +376,11 @@ def main():
                 # Bearish → laagste low zoeken
                 # Bullish → hoogste high zoeken
                 if not bull_trend:
-                    low_7d = min(c["low"] for c in candles[-14:])
-                    high_7d = max(c["high"] for c in candles[-3:])
+                    low_7d = min(c["low"] for c in candles[-7:])
+                    high_7d = max(c["high"] for c in candles[-7:])
                 else:
-                    low_7d = min(c["low"] for c in candles[-3:])
-                    high_7d = max(c["high"] for c in candles[-14:])
+                    low_7d = min(c["low"] for c in candles[-7:])
+                    high_7d = max(c["high"] for c in candles[-7:])
                 
                 
                 
