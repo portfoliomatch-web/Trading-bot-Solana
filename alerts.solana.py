@@ -418,7 +418,16 @@ def main():
                 # Stop loss blijft actief
                 if sol > 0 and last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
                     sell_all("(stop loss)")
-                    
+                
+                # Uitbraak detectie
+                if sol_price > high_7d and laatste_zone != "uitbraak":
+                    laatste_zone = "uitbraak"
+                    send(
+                        f"🚀 UITBRAAK BOVEN RESISTANCE!\n"
+                        f"SOL: €{sol_price:.2f} | Resistance was: €{high_7d:.2f}\n"
+                        f"Nieuwe swing omhoog mogelijk!\n"
+                        f"Vasthouden of bijkopen?"
+                    )
             # =============================
             # COMMANDS
             # =============================
