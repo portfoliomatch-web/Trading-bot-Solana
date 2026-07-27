@@ -526,7 +526,7 @@ def main():
                         f"📊 TradingView Live (4H):\n"
                         f"❌ Sell Score: {tv4_sell} / 26\n"
                         f"=========================\n\n"
-                        f"📊 Check Moving Averages (4H):\nhttps://bit.ly\n"
+                        f"📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=2h\n"
                         f"✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
 
                         f"=========================\n"
