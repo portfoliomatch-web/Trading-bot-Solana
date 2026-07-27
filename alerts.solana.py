@@ -495,8 +495,8 @@ def main():
                         f"=========================\n"
                         f"TV 1H: Buy {tv1_buy} | Sell {tv1_sell} → {tv1_signaal}\n"
                         f"TV 4H: Buy {tv4_buy} | Sell {tv4_sell} → {tv4_signaal}\n"
-                        
-                        f"📊 Check Moving Averages:\n1H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=1h\n4H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=4h\n✅ Kopen: 1H 10+ Buy + 4H niet Strong sell\n❌ Verkopen: 4H 10+ Sell"
+                        f"=========================\n"
+                        f"📊 Check Moving Averages:\n1H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=1h\n✅ Kopen: 1H 10+ Buy + 4H niet Strong sell\n❌ Verkopen: 4H 10+ Sell"
                     
                         
                     )
