@@ -85,7 +85,7 @@ def get_tv_analyse(interval):
     try:
         from tradingview_ta import TA_Handler, Interval
         sol = TA_Handler(
-            symbol="SOLEUR",
+            symbol="SOLUSD",
             exchange="COINBASE",
             screener="crypto",
             interval=interval
