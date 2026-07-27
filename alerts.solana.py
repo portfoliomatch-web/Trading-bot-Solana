@@ -413,6 +413,11 @@ def main():
                 
                 near_support = sol_price <= low_7d + 1.00
                 near_resistance = sol_price >= high_7d - 1.00
+                               
+                # Haal de live 2H en 4H tellers op voor de automatische TV voorwaarden
+                tv2_buy, _, _ = get_tv_analyse("2h")
+                _, tv4_sell, _ = get_tv_analyse("4h")
+
 
                 if near_support and laatste_zone != "support":
                     laatste_zone = "support"
@@ -441,6 +446,17 @@ def main():
                     
                 elif not near_support and not near_resistance:
                     laatste_zone = None
+
+                # Automatisch kopen als TV 2H Buy 10+ 
+                if sol < 0.01 and eur > 5 and tv2_buy >= 10:
+                    send(f"🛒 TV 2H BUY SIGNAAL — 2H Buy: {tv2_buy} | SOL: €{sol_price:.2f}")
+                    buy_all()
+
+                # Automatisch verkopen als TV 4H Sell 10+
+                if sol > 0 and last_buy_price and tv4_sell >= 10:
+                    send(f"📉 TV SELL SIGNAAL — 4H Sell: {tv4_sell} | SOL: €{sol_price:.2f}")
+                    sell_all("(TV 4H sell signaal)")
+
 
                 # Stop loss blijft actief
                 # Automatisch verkopen als TV 4H Sell 10+
@@ -472,6 +488,10 @@ def main():
                     send(analyse_market())
 
                 elif "/update" in msg:
+                    # Live TV waarden ophalen voor het update overzicht
+                    tv2_buy, tv2_sell, _ = get_tv_analyse("2h")
+                    tv4_buy, tv4_sell, _ = get_tv_analyse("4h")
+
                     totaal = eur + (sol * sol_price)
                     status = "BUY" if sol > 0 else "SELL"
                     winst = ""
@@ -498,13 +518,22 @@ def main():
                         f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}\n"
                         f"Candle: {candle_kleur}\n"
                         f"Zone: {'🟢 Koop zone' if near_support else '🔴 Verkoop zone' if near_resistance else '⏸️ Geen zone'}\n"
-                        f"\n"
+                        f"\n"                 
                         f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}\n"
+                        f"=========================\n\n"
+                        f"📊 TradingView Live (2H):\n"
+                        f"🟢 Buy Score: {tv2_buy} / 26\n\n"
+                        f"📊 TradingView Live (4H):\n"
+                        f"❌ Sell Score: {tv4_sell} / 26\n"
+                        f"=========================\n\n"
+                        f"📊 Check Moving Averages (4H):\nhttps://bit.ly\n"
+                        f"✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
+
                         f"=========================\n"
                         f"TV 1H: Buy {tv1_buy} | Sell {tv1_sell} → {tv1_signaal}\n"
                         f"TV 4H: Buy {tv4_buy} | Sell {tv4_sell} → {tv4_signaal}\n"
                         f"=========================\n"
-                        f"📊 Check Moving Averages:\n1H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=1h\n✅ Kopen: 1H 10+ Buy + 4H niet Strong sell\n❌ Verkopen: 4H 10+ Sell"
+                        
                     
                         
                     )
