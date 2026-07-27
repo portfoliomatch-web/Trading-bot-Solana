@@ -85,8 +85,8 @@ def get_tv_analyse(interval):
     try:
         from tradingview_ta import TA_Handler, Interval
         sol = TA_Handler(
-            symbol="SOLUSD",
-            exchange="COINBASE",
+            symbol="SOLUSDT",
+            exchange="BINANCE",
             screener="crypto",
             interval=interval
         )
@@ -443,8 +443,16 @@ def main():
                     laatste_zone = None
 
                 # Stop loss blijft actief
-                if sol > 0 and last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
+                # Automatisch verkopen als TV 4H Sell 10+
+                if sol > 0 and last_buy_price and tv4_sell >= 10:
+                    send(f"📉 TV SELL — 4H Sell: {tv4_sell} | SOL: €{sol_price:.2f}")
+                    sell_all("(TV 4H sell signaal)")
+
+                # Stop loss blijft actief
+                elif sol > 0 and last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
                     sell_all("(stop loss)")
+                    
+                    
                 
                 # Uitbraak detectie
                 if sol_price > high_7d and laatste_zone != "uitbraak":
