@@ -78,7 +78,26 @@ def ema(prices, period):
     for price in prices[1:]:
         ema_value = price * k + ema_value * (1 - k)
     return ema_value
-
+# =============================
+# TRADINGVIEW ANALYSE
+# =============================
+def get_tv_analyse():
+    try:
+        from tradingview_ta import TA_Handler, Interval
+        sol = TA_Handler(
+            symbol="SOLEUR",
+            exchange="COINBASE",
+            screener="crypto",
+            interval=Interval.INTERVAL_4_HOURS
+        )
+        analyse = sol.get_analysis()
+        buy = analyse.summary["BUY"]
+        sell = analyse.summary["SELL"]
+        neutral = analyse.summary["NEUTRAL"]
+        return buy, sell, neutral
+    except Exception as e:
+        print(f"TV fout: {e}")
+        return 0, 0, 0
 # =============================
 # SWING SIGNAAL
 # =============================
@@ -359,6 +378,8 @@ def main():
             bull_trend = ema20 > (ema50 + 0.50)
             candle_kleur = "🟢 Groen" if sol_cache[-1] > sol_cache[-2] else "🔴 Rood"
             eur, sol = get_balances()
+            tv_buy, tv_sell, tv_neutral = get_tv_analyse()
+            tv_signaal = "🟢 Buy" if tv_buy >= 10 else "🔴 Sell" if tv_sell >= 10 else "⏸️ Neutral"
 
 
            # =============================
@@ -466,6 +487,7 @@ def main():
                         f"\n"
                         f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}\n"
                         f"=========================\n"
+                        f"TV 4H: Buy {tv_buy} | Neutral {tv_neutral} | Sell {tv_sell} → {tv_signaal}\n"
                         f"📊 Check Moving Averages:\n1H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=1h\n4H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=4h\n✅ Kopen: 1H 10+ Buy + 4H niet Strong sell\n❌ Verkopen: 4H 10+ Sell"
                     
                         
