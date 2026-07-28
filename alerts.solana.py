@@ -550,8 +550,17 @@ def main():
                 elif "/buy" in msg:
                     buy_all()
                     send("🟢 Handmatige BUY uitgevoerd")
+                
                 elif "/rsi" in msg:
-                    send(f"RSI: {rsi:.1f}\nKoop signaal: {koop_signaal} ({koop_reden})\nVerkoop signaal: {verkoop_signaal} ({verkoop_reden})")
+                    # Bereken de actuele RSI en geef de live status van je TV indicators door
+                    rsi_now = bereken_rsi(sol_cache)
+                    send(
+                        f"📊 Live Indicator Status:\n"
+                        f"RSI (14): {rsi_now:.1f}\n\n"
+                        f"🛒 Koop Status (2H Buy): {tv2_buy} / 26 (Koopt bij >= 10)\n"
+                        f"📉 Verkoop Status (4H Sell): {tv4_sell} / 26 (Verkoopt bij >= 10 op Candle-Close)"
+                    )
+
                 elif "/reset" in msg:
                     last_buy_price = None
                     highest_price = None
