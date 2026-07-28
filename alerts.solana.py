@@ -502,17 +502,12 @@ def main():
                     send(analyse_market())
 
                 elif "/update" in msg:
-                    # Live TV waarden ophalen voor het update overzicht
-                    tv2_buy, tv2_sell, _ = get_tv_analyse("2h")
-                    tv4_buy, tv4_sell, _ = get_tv_analyse("4h")
+                    # Live Binance TV waarden ophalen voor het update overzicht
+                    tv2_buy, _, _ = get_tv_analyse("2h")
+                    _, tv4_sell, _ = get_tv_analyse("4h")
 
                     totaal = eur + (sol * sol_price)
                     status = "BUY" if sol > 0 else "SELL"
-                    winst = ""
-                    if sol > 0 and last_buy_price:
-                        pct = ((sol_price - last_buy_price) / last_buy_price) * 100
-                        winst = f"\nEntry: €{last_buy_price:.2f} | Winst: {pct:.2f}%"
-                    signaal = "⚠️ KOOP SIGNAAL" if bull_trend else "⚠️ VERKOOP SIGNAAL"
                     
                     winst_info = ""
                     if sol > 0 and last_buy_price:
@@ -525,32 +520,22 @@ def main():
                         f"Koers: €{sol_price:.2f}\n"
                         f"Status: {status}{winst_info}\n"
                         f"Saldo: €{totaal:.2f}\n"
-                    
                         f"=========================\n"
                         f"EMA7: {ema20:.2f}\n"
                         f"EMA20: {ema50:.2f}\n"
                         f"Trend: {'🟢 Bullish' if bull_trend else '🔴 Bearish'}\n"
                         f"Candle: {candle_kleur}\n"
-                        f"Zone: {'🟢 Koop zone' if near_support else '🔴 Verkoop zone' if near_resistance else '⏸️ Geen zone'}\n"
-                        f"\n"                 
+                        f"Zone: {'🟢 Koop zone' if near_support else '🔴 Verkoop zone' if near_resistance else '⏸️ Geen zone'}\n\n"                 
                         f"Support: €{low_7d:.2f} | Resistance: €{high_7d:.2f}\n"
                         f"=========================\n\n"
-                        f"📊 TradingView Live (2H):\n"
-                        f"🟢 Buy Score: {tv2_buy} / 26\n\n"
-                        f"📊 TradingView Live (4H):\n"
-                        f"❌ Sell Score: {tv4_sell} / 26\n"
+                        f"📊 TradingView Live (Binance):\n"
+                        f"🟢 2H Buy Score: {tv2_buy} / 26\n"
+                        f"❌ 4H Sell Score: {tv4_sell} / 26\n"
                         f"=========================\n\n"
-                        f"📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=2h\n"
+                        f"📊 Check Moving Averages (4H):\nhttps://tradingview.com\n"
                         f"✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
-
-                        f"=========================\n"
-                        f"TV 1H: Buy {tv1_buy} | Sell {tv1_sell} → {tv1_signaal}\n"
-                        f"TV 4H: Buy {tv4_buy} | Sell {tv4_sell} → {tv4_signaal}\n"
-                        f"=========================\n"
-                        
-                    
-                        
                     )
+
                 
                 elif "/pauzeon" in msg:
                     trading_active = False
