@@ -432,7 +432,8 @@ def main():
                     
                 elif near_resistance and laatste_zone != "resistance":
                     laatste_zone = "resistance"
-                    status_tekst = "🚨 ALLES ROOD — VERKOOP SIGNAAL" if (not bull_trend and candle_kleur == "🔴 Rood") else "🔴 NADERENDE VERKOOP ZONE"
+                    status_tekst = "🚨 ALLES ROOD — VERKOOP SIGNAAL" if (not bull_trend and candle_kleur == "🔴 Rood") else f"🔴 NADERENDE VERKOOP ZONE (TV Sell: {tv4_sell})"
+                    
                     send(
                         f"{status_tekst}\n"
                         f"SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}\n"
