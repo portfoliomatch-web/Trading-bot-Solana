@@ -419,33 +419,29 @@ def main():
                 _, tv4_sell, _ = get_tv_analyse("4h")
 
 
+                # --- Naderende Zones & Live TV Scores Meldingen ---
                 if near_support and laatste_zone != "support":
                     laatste_zone = "support"
-                    if bull_trend and candle_kleur == "🟢 Groen":
-                        send(
-                            f"🚀 ALLES GROEN — KOOP SIGNAAL\n"
-                            f"SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}\n"
-                            f"Trend: 🟢 Bullish | Candle: 🟢 Groen\n\n"
-                            f"📊 Check Moving Averages:\n1H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=1h\n4H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=4h\n✅ Kopen: 1H 10+ Buy + 4H niet Strong sell\n❌ Verkopen: 4H 10+ Sell"
-                            f"✅ Kopen: 10+ Buy"
-                        )
-                    else:
-                        send(f"🟢 KOOP ZONE — SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}")
+                    status_tekst = "🚀 ALLES GROEN — KOOP SIGNAAL" if (bull_trend and candle_kleur == "🟢 Groen") else "🟢 NADERENDE (8+) KOOP ZONE"
+                    send(
+                        f"{status_tekst}\n"
+                        f"SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}\n"
+                        f"TV 2H Buy: {tv2_buy} | 4H Sell: {tv4_sell}"
+                    )
+                    
                 elif near_resistance and laatste_zone != "resistance":
                     laatste_zone = "resistance"
-                    if not bull_trend and candle_kleur == "🔴 Rood":
-                        send(
-                            f"🚨 ALLES ROOD — VERKOOP SIGNAAL\n"
-                            f"SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}\n"
-                            f"Trend: 🔴 Bearish | Candle: 🔴 Rood\n\n"
-                            f"📊 Check Moving Averages:\n1H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=1h\n4H: https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=4h\n✅ Kopen: 1H 10+ Buy + 4H niet Strong sell\n❌ Verkopen: 4H 10+ Sell"
-                            f"❌ Verkopen: 10+ Sell"
-                        )
-                    else:
-                        send(f"🔴 VERKOOP ZONE — SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}")
+                    status_tekst = "🚨 ALLES ROOD — VERKOOP SIGNAAL" if (not bull_trend and candle_kleur == "🔴 Rood") else "🔴 NADERENDE VERKOOP ZONE"
+                    send(
+                        f"{status_tekst}\n"
+                        f"SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}\n"
+                        f"TV 2H Buy: {tv2_buy} | 4H Sell: {tv4_sell}"
+                    )
                     
                 elif not near_support and not near_resistance:
                     laatste_zone = None
+
+
 
                 # Definieer eerst de tijdsluiting, zodat de aankoop er ook naar kan kijken
                 is_4h_sluiting = (now.hour % 4 == 0 and now.minute <= 5)
@@ -462,7 +458,7 @@ def main():
 
 
 
-                                # --- AUTOMATISCH VERKOPEN (Alleen op de 4H Candle-Close) ---
+                # --- AUTOMATISCH VERKOPEN (Alleen op de 4H Candle-Close) ---
                 # De 4H kaarsen sluiten om de 4 uur (de uren deelbaar door 4: 0, 4, 8, 12, 16, 20)
                 # We controleren alleen in de eerste 5 minuten van dat nieuwe 4-uurs blok.
                 is_4h_sluiting = (now.hour % 4 == 0 and now.minute <= 5)
