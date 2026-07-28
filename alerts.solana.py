@@ -452,10 +452,16 @@ def main():
                     send(f"🛒 TV 2H BUY SIGNAAL — 2H Buy: {tv2_buy} | SOL: €{sol_price:.2f}")
                     buy_all()
 
-                # Automatisch verkopen als TV 4H Sell 10+
-                if sol > 0 and last_buy_price and tv4_sell >= 10:
-                    send(f"📉 TV SELL SIGNAAL — 4H Sell: {tv4_sell} | SOL: €{sol_price:.2f}")
-                    sell_all("(TV 4H sell signaal)")
+                                # --- AUTOMATISCH VERKOPEN (Alleen op de 4H Candle-Close) ---
+                # De 4H kaarsen sluiten om de 4 uur (de uren deelbaar door 4: 0, 4, 8, 12, 16, 20)
+                # We controleren alleen in de eerste 5 minuten van dat nieuwe 4-uurs blok.
+                is_4h_sluiting = (now.hour % 4 == 0 and now.minute <= 5)
+
+                if sol > 0 and last_buy_price and tv4_sell >= 10 and is_4h_sluiting:
+                    send(f"📉 TV 4H CLOSE SELL — 4H Sell score: {tv4_sell} | SOL: €{sol_price:.2f}")
+                    sell_all("(TV 4H gesloten signaal)")
+
+                
 
 
                 # Stop loss blijft actief
