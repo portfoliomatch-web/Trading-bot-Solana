@@ -78,26 +78,45 @@ def ema(prices, period):
     for price in prices[1:]:
         ema_value = price * k + ema_value * (1 - k)
     return ema_value
+
 # =============================
-# TRADINGVIEW ANALYSE
+# TRADINGVIEW ANALYSE (GLOBAL SETUP)
 # =============================
-def get_tv_analyse(interval):
+from tradingview_ta import TA_Handler, Interval
+
+# Maak de handlers één keer vast aan bovenin het script
+handler_2h = TA_Handler(
+    symbol="SOLUSDT",
+    exchange="BINANCE",
+    screener="crypto",
+    interval=Interval.INTERVAL_2_HOURS
+)
+
+handler_4h = TA_Handler(
+    symbol="SOLUSDT",
+    exchange="BINANCE",
+    screener="crypto",
+    interval=Interval.INTERVAL_4_HOURS
+)
+
+def get_tv_analyse(interval_string):
     try:
-        from tradingview_ta import TA_Handler, Interval
-        sol = TA_Handler(
-            symbol="SOLUSDT",
-            exchange="BINANCE",
-            screener="crypto",
-            interval=interval
-        )
-        analyse = sol.get_analysis()
+        # Hergebruik de bestaande stabiele verbindingen
+        if interval_string == "4h":
+            analyse = handler_4h.get_analysis()
+        else:
+            analyse = handler_2h.get_analysis()
+            
         buy = analyse.summary["BUY"]
         sell = analyse.summary["SELL"]
         neutral = analyse.summary["NEUTRAL"]
         return buy, sell, neutral
     except Exception as e:
-        print(f"TV fout: {e}")
+        print(f"TV live data-feed vertraging: {e}")
         return 0, 0, 0
+
+
+
 
 # =============================
 # SWING SIGNAAL
