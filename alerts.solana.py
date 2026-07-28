@@ -422,7 +422,8 @@ def main():
                 # --- Naderende Zones & Live TV Scores Meldingen ---
                 if near_support and laatste_zone != "support":
                     laatste_zone = "support"
-                    status_tekst = "🚀 ALLES GROEN — KOOP SIGNAAL" if (bull_trend and candle_kleur == "🟢 Groen") else "🟢 NADERENDE (8+) KOOP ZONE"
+                    status_tekst = "🚀 ALLES GROEN — KOOP SIGNAAL" if (bull_trend and candle_kleur == "🟢 Groen") else f"🟢 NADERENDE KOOP ZONE (TV Buy: {tv2_buy})"
+
                     send(
                         f"{status_tekst}\n"
                         f"SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}\n"
