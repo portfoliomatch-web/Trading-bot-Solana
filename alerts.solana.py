@@ -551,7 +551,7 @@ def main():
                         f"🟢 2H Buy Score: {tv2_buy} / 26\n"
                         f"❌ 4H Sell Score: {tv4_sell} / 26\n"
                         f"=========================\n\n"
-                        f"📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=COINBASE&interval=2h\n"
+                        f"📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=BINANCE&interval=2h\n"
                         f"✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
                     )
 
