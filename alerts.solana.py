@@ -393,6 +393,10 @@ def main():
             # =============================
             # RSI + SWING SIGNALEN
             # =============================
+            # Haal de live TradingView scores één keer centraal op per loop-ronde
+            tv2_buy, _, _ = get_tv_analyse("2h")
+            _, tv4_sell, _ = get_tv_analyse("4h")
+
             ema20 = ema(sol_cache, 7)
             ema50 = ema(sol_cache, 20)
             bull_trend = ema20 > (ema50 + 0.50)
