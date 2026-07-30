@@ -400,7 +400,8 @@ def main():
                 time.sleep(15)
                 continue
 
-                        # =============================
+             
+            # =============================
             # RSI + SWING SIGNALEN
             # =============================
             # Haal TV data alleen op als er 300 seconden (5 min) voorbij zijn gegaan
@@ -426,10 +427,7 @@ def main():
             candle_kleur = "🟢 Groen" if sol_cache[-1] > sol_cache[-2] else "🔴 Rood"
             eur, sol = get_balances()
 
-        
-
-
-           # =============================
+            # =============================
             # ✅ SWING STRATEGIE
             # =============================
             if trading_active:
