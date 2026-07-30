@@ -495,15 +495,16 @@ def main():
                 
 
 
-                # Stop loss blijft actief
                 # Automatisch verkopen als TV 4H Sell 10+
                 if sol > 0 and last_buy_price and tv4_sell >= 10:
                     send(f"📉 TV SELL — 4H Sell: {tv4_sell} | SOL: €{sol_price:.2f}")
                     sell_all("(TV 4H sell signaal)")
 
-                # Stop loss blijft actief
-                elif sol > 0 and last_buy_price and sol_price <= last_buy_price * (1 - STOP_LOSS_PERCENT):
-                    sell_all("(stop loss)")
+                # 🟢 DIT BLOK IS HIERONDER VERVANGEN DOOR DE 1% SUPPORT STOP LOSS:
+                elif sol > 0 and sol_price < (low_7d * 0.99):
+                    send(f"🚨 STOP LOSS GETRIGGERD — Structuur doorbroken!\nSOL: €{sol_price:.2f} | Support was: €{low_7d:.2f} (-1%)")
+                    sell_all("(technische stop loss)")
+
                     
                     
                 
