@@ -463,9 +463,7 @@ def main():
                 near_support = sol_price <= low_7d + 1.00
                 near_resistance = sol_price >= high_7d - 1.00
                                
-                # Haal de live 2H en 4H tellers op voor de automatische TV voorwaarden
-                tv2_buy, _, _ = get_tv_analyse("2h")
-                _, tv4_sell, _ = get_tv_analyse("4h")
+                
 
 
                 # --- Naderende Zones & Live TV Scores Meldingen ---
