@@ -527,30 +527,30 @@ def main():
                 if highest_price == 0 or sol_price > highest_price:
                     highest_price = sol_price
 
-                # 🟢 VEILIGHEIDSVANGNET: Als last_buy_price None is, gebruik de live prijs
-                base_entry_price = last_buy_price if last_buy_price is not None else sol_price
-
-                # Bepaal het actieve stop-niveau: 3% op je inleg, maar 6% als trailing winstbewaking
-                if highest_price <= last_buy_price * 1.03:
-                    active_stop_level = last_buy_price * 0.97  # Strakke 3% risicobeperking bij de start
-                else:
-                    active_stop_level = highest_price * 0.94   # Ruime 6% winstbescherming zodra we stijgen
-
                 # 1. Indicator Check: Alleen verkopen op de officiële 4H kaars-sluiting
-                if sol > 0 and last_buy_price and tv4_sell >= 10 and is_4h_sluiting:
+                if sol > 0 and last_buy_price is not None and tv4_sell >= 10 and is_4h_sluiting:
                     send(f"📉 TV 4H CLOSE SELL — 4H Sell score: {tv4_sell} | SOL: €{sol_price:.2f}")
                     sell_all("(TV 4H gesloten signaal)")
                     highest_price = 0
 
-                # 2. Harde Prijs Check: Grijp direct in bij 3% verlies of 6% daling vanaf de top
-                elif sol > 0 and sol_price <= active_stop_level:
+                # 2. Harde Prijs Check: Alleen berekenen als last_buy_price bekend is
+                elif sol > 0 and last_buy_price is not None:
+                    # Bepaal het actieve stop-niveau
                     if highest_price <= last_buy_price * 1.03:
-                        reason = f"🚨 INITIAL STOP LOSS (3%) — Risico beperkt! | SOL: €{sol_price:.2f} | Entry was: €{last_buy_price:.2f}"
+                        active_stop_level = last_buy_price * 0.97  # Strakke 3% risicobeperking
                     else:
-                        reason = f"🚀 TRAILING WINSTRUST (6%) — Winst veilig! | SOL: €{sol_price:.2f} | Top was: €{highest_price:.2f}"
-                    send(reason)
-                    sell_all("(hybride stop loss)")
-                    highest_price = 0
+                        active_stop_level = highest_price * 0.94   # Ruime 6% winstbescherming
+
+                    # Grijp live in bij een trendbreuk
+                    if sol_price <= active_stop_level:
+                        if highest_price <= last_buy_price * 1.03:
+                            reason = f"🚨 INITIAL STOP LOSS (3%) — Risico beperkt! | SOL: €{sol_price:.2f} | Entry was: €{last_buy_price:.2f}"
+                        else:
+                            reason = f"🚀 TRAILING WINSTRUST (6%) — Winst veilig! | SOL: €{sol_price:.2f} | Top was: €{highest_price:.2f}"
+                        send(reason)
+                        sell_all("(hybride stop loss)")
+                        highest_price = 0
+
 
 
 
