@@ -37,9 +37,15 @@ laatste_zone = None
 # =============================
 # CACHE (ANTI 429)
 # =============================
+# =============================
+# CACHE (ANTI 429)
+# =============================
 last_history_update = 0
+last_tv_update = 0
+tv2_buy_cache = 0
+tv4_sell_cache = 0
 sol_cache = []
-btc_cache = []
+
 
 # =============================
 # RSI BEREKENING
@@ -330,10 +336,14 @@ def sell_all(reden=""):
 # =============================
 # MAIN
 # =============================
+# =============================
+# MAIN
+# =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
     global sol_cache, btc_cache, last_history_update, market_mode
-    global laatste_zone
+    global laatste_zone, last_tv_update, tv2_buy_cache, tv4_sell_cache  # 🟢 PLAK DEZE REGEL HIER
+
 
 
     send("🤖 Bot live 🚀 — Swing strategie actief")
@@ -390,24 +400,32 @@ def main():
                 time.sleep(15)
                 continue
 
-            # =============================
+                        # =============================
             # RSI + SWING SIGNALEN
             # =============================
-            # Haal de live TradingView scores één keer centraal op per loop-ronde
-            tv2_buy, _, _ = get_tv_analyse("2h")
-            _, tv4_sell, _ = get_tv_analyse("4h")
+            # Haal TV data alleen op als er 300 seconden (5 min) voorbij zijn gegaan
+            if time.time() - last_tv_update > 300:
+                try:
+                    tv2_buy_live, _, _ = get_tv_analyse("2h")
+                    _, tv4_sell_live, _ = get_tv_analyse("4h")
+                    
+                    if tv2_buy_live > 0 or tv4_sell_live > 0:
+                        tv2_buy_cache = tv2_buy_live
+                        tv4_sell_cache = tv4_sell_live
+                        last_tv_update = time.time()
+                except Exception as e:
+                    print("Fout tijdens ophalen TV live data:", e)
+
+            # Wijs de cache toe aan de actieve variabelen voor de checks hieronder
+            tv2_buy = tv2_buy_cache
+            tv4_sell = tv4_sell_cache
 
             ema20 = ema(sol_cache, 7)
             ema50 = ema(sol_cache, 20)
             bull_trend = ema20 > (ema50 + 0.50)
             candle_kleur = "🟢 Groen" if sol_cache[-1] > sol_cache[-2] else "🔴 Rood"
             eur, sol = get_balances()
-            from tradingview_ta import Interval
-            tv4_buy, tv4_sell, tv4_neutral = get_tv_analyse(Interval.INTERVAL_4_HOURS)
-            tv1_buy, tv1_sell, tv1_neutral = get_tv_analyse(Interval.INTERVAL_1_HOUR)
-            tv4_signaal = "🟢 Buy" if tv4_buy >= 10 else "🔴 Sell" if tv4_sell >= 10 else "⏸️ Neutral"
-            tv1_signaal = "🟢 Buy" if tv1_buy >= 10 else "🔴 Sell" if tv1_sell >= 10 else "⏸️ Neutral"
-            
+
         
 
 
