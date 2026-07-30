@@ -37,14 +37,13 @@ laatste_zone = None
 # =============================
 # CACHE (ANTI 429)
 # =============================
-# =============================
-# CACHE (ANTI 429)
-# =============================
 last_history_update = 0
 last_tv_update = 0
 tv2_buy_cache = 0
 tv4_sell_cache = 0
 sol_cache = []
+highest_price = 0  # 🟢 NIEUW: Houdt de hoogste koers bij tijdens de trade
+
 
 
 # =============================
@@ -343,10 +342,14 @@ def sell_all(reden=""):
 # =============================
 # MAIN
 # =============================
+# =============================
+# MAIN
+# =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
     global sol_cache, btc_cache, last_history_update, market_mode
-    global laatste_zone, last_tv_update, tv2_buy_cache, tv4_sell_cache  # 🟢 PLAK DEZE REGEL HIER
+    global laatste_zone, last_tv_update, tv2_buy_cache, tv4_sell_cache
+    global highest_price  # 🟢 NIEUW: Maak de variabele hier bereikbaar
 
 
 
@@ -518,15 +521,27 @@ def main():
                 
 
 
-                # Automatisch verkopen als TV 4H Sell 10+
-                if sol > 0 and last_buy_price and tv4_sell >= 10:
-                    send(f"📉 TV SELL — 4H Sell: {tv4_sell} | SOL: €{sol_price:.2f}")
-                    sell_all("(TV 4H sell signaal)")
+                                # =============================
+                # DUAL EXIT: TV 4H SELL OR TRAILING STOP
+                # =============================
+                # Update de hoogste prijs zolang we in de trade zitten
+                if highest_price == 0 or sol_price > highest_price:
+                    highest_price = sol_price
 
-                # 🟢 WEER TERUGGEZET NAAR DE REALISTISCHE 6% VANAF JOUW INSTAP:
-                elif sol > 0 and last_buy_price and sol_price <= last_buy_price * 0.94:
-                    send(f"🚨 STOP LOSS GETRIGGERD — 6% marge bereikt!\nSOL: €{sol_price:.2f} | Entry was: €{last_buy_price:.2f}")
-                    sell_all("(stop loss)")
+                trailing_stop_level = highest_price * 0.94
+
+                # 1. Indicator Check: Alleen verkopen op de officiële 4H kaars-sluiting
+                if sol > 0 and last_buy_price and tv4_sell >= 10 and is_4h_sluiting:
+                    send(f"📉 TV 4H CLOSE SELL — 4H Sell score: {tv4_sell} | SOL: €{sol_price:.2f}")
+                    sell_all("(TV 4H gesloten signaal)")
+                    highest_price = 0
+
+                # 2. Harde Prijs Check: Grijp direct live in als koers 6% vanaf de hoogste top zakt
+                elif sol > 0 and sol_price <= trailing_stop_level:
+                    send(f"🚀 TRAILING STOP LOSS GETRIGGERD!\nWinst vastgezet op: €{sol_price:.2f} | Hoogste top was: €{highest_price:.2f}")
+                    sell_all("(trailing stop loss)")
+                    highest_price = 0
+
 
 
                     
@@ -594,7 +609,17 @@ def main():
                     send("▶️ Bot actief — trades hervat")
                     
                 elif "/sell" in msg:
-                    sell_all("(handmatig)")
+                    if sol > 0.01:
+                         send("⏳ Handmatige verkoop gestart op Bitvavo...")
+                         sell_all("(Handmatig via Telegram)")
+                         highest_price = 0  # 🟢 RESET: Zet de trailing-top direct weer op nul
+                         send("✅ Alle Solana succesvol verkocht. Status staat weer op SELL.")
+                    else:
+                         send("❌ Actie geweigerd: Je bezit momenteel geen Solana om te verkopen.")
+
+
+
+                
                 elif "/buy" in msg:
                     buy_all()
                     send("🟢 Handmatige BUY uitgevoerd")
