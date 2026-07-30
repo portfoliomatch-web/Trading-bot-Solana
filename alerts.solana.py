@@ -500,10 +500,11 @@ def main():
                     send(f"📉 TV SELL — 4H Sell: {tv4_sell} | SOL: €{sol_price:.2f}")
                     sell_all("(TV 4H sell signaal)")
 
-                # 🟢 DIT BLOK IS HIERONDER VERVANGEN DOOR DE 1% SUPPORT STOP LOSS:
-                elif sol > 0 and sol_price < (low_7d * 0.99):
-                    send(f"🚨 STOP LOSS GETRIGGERD — Structuur doorbroken!\nSOL: €{sol_price:.2f} | Support was: €{low_7d:.2f} (-1%)")
-                    sell_all("(technische stop loss)")
+                # 🟢 WEER TERUGGEZET NAAR DE REALISTISCHE 6% VANAF JOUW INSTAP:
+                elif sol > 0 and last_buy_price and sol_price <= last_buy_price * 0.94:
+                    send(f"🚨 STOP LOSS GETRIGGERD — 6% marge bereikt!\nSOL: €{sol_price:.2f} | Entry was: €{last_buy_price:.2f}")
+                    sell_all("(stop loss)")
+
 
                     
                     
