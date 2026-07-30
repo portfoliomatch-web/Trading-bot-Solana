@@ -527,6 +527,9 @@ def main():
                 if highest_price == 0 or sol_price > highest_price:
                     highest_price = sol_price
 
+                # 🟢 VEILIGHEIDSVANGNET: Als last_buy_price None is, gebruik de live prijs
+                base_entry_price = last_buy_price if last_buy_price is not None else sol_price
+
                 # Bepaal het actieve stop-niveau: 3% op je inleg, maar 6% als trailing winstbewaking
                 if highest_price <= last_buy_price * 1.03:
                     active_stop_level = last_buy_price * 0.97  # Strakke 3% risicobeperking bij de start
