@@ -107,8 +107,11 @@ handler_4h = TA_Handler(
 
 def get_tv_analyse(interval_string):
     try:
-        # Hergebruik de bestaande stabiele verbindingen
+        import time # Zorg dat time geïmporteerd is
+        
         if interval_string == "4h":
+            # Wacht 2 seconden vóór het tweede verzoek om 429 te voorkomen
+            time.sleep(2) 
             analyse = handler_4h.get_analysis()
         else:
             analyse = handler_2h.get_analysis()
@@ -120,6 +123,7 @@ def get_tv_analyse(interval_string):
     except Exception as e:
         print(f"TV live data-feed vertraging: {e}")
         return 0, 0, 0
+
 
 
 
