@@ -405,12 +405,10 @@ def main():
                 continue
 
              
-            # =============================
             # RSI + SWING SIGNALEN
             # =============================
             # Haal TV data alleen op als er 900 seconden (15 min) voorbij zijn gegaan
             if time.time() - last_tv_update > 900:
-
                 try:
                     tv2_buy_live, _, _ = get_tv_analyse("2h")
                     _, tv4_sell_live, _ = get_tv_analyse("4h")
@@ -418,13 +416,16 @@ def main():
                     if tv2_buy_live > 0 or tv4_sell_live > 0:
                         tv2_buy_cache = tv2_buy_live
                         tv4_sell_cache = tv4_sell_live
-                        last_tv_update = time.time()
+                    
+                    # 🟢 HIER MOET DE TIMER WORDEN RESET:
+                    last_tv_update = time.time()
                 except Exception as e:
                     print("Fout tijdens ophalen TV live data:", e)
 
             # Wijs de cache toe aan de actieve variabelen voor de checks hieronder
             tv2_buy = tv2_buy_cache
             tv4_sell = tv4_sell_cache
+
 
             ema20 = ema(sol_cache, 7)
             ema50 = ema(sol_cache, 20)
