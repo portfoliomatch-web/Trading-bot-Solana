@@ -407,7 +407,7 @@ def main():
             # RSI + SWING SIGNALEN
             # =============================
             # Haal TV data alleen op als er 900 seconden (15 min) voorbij zijn gegaan
-                        if time.time() - last_tv_update > 900:
+            if time.time() - last_tv_update > 900:
                 last_tv_update = time.time()
                 try:
                     tv2_buy_live, _, _, _ = get_tv_analyse("2h")
