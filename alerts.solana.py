@@ -570,8 +570,12 @@ def main():
 
                 elif "/update" in msg:
                     # Live Binance TV waarden ophalen voor het update overzicht
-                    tv2_buy, _, _ = get_tv_analyse("2h")
-                    _, tv4_sell, _ = get_tv_analyse("4h")
+                    # Haal de gecachte of live scores op voor het update overzicht
+                    tv2_buy, _, _, _ = get_tv_analyse("2h")  # 🟢 BIJGEWERKT: 4 waarden uitpakken
+                    _, tv4_sell, _, tv4_osc = get_tv_analyse("4h")  # 🟢 BIJGEWERKT: 4 waarden uitpakken
+
+                    
+                    
 
                     totaal = eur + (sol * sol_price)
                     status = "BUY" if sol > 0 else "SELL"
