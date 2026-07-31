@@ -43,7 +43,7 @@ tv2_buy_cache = 0
 tv4_sell_cache = 0
 sol_cache = []
 highest_price = 0  # 🟢 NIEUW: Houdt de hoogste koers bij tijdens de trade
-
+tv4_osc_cache = "NEUTRAL" # 🟢 NIEUW
 
 
 # =============================
@@ -106,10 +106,8 @@ handler_4h = TA_Handler(
 
 def get_tv_analyse(interval_string):
     try:
-        import time # Zorg dat time geïmporteerd is
-        
+        import time
         if interval_string == "4h":
-            # Wacht 2 seconden vóór het tweede verzoek om 429 te voorkomen
             time.sleep(2) 
             analyse = handler_4h.get_analysis()
         else:
@@ -118,10 +116,12 @@ def get_tv_analyse(interval_string):
         buy = analyse.summary["BUY"]
         sell = analyse.summary["SELL"]
         neutral = analyse.summary["NEUTRAL"]
-        return buy, sell, neutral
+        osc = analyse.oscillators["RECOMMENDATION"] # 🟢 NIEUW
+        return buy, sell, neutral, osc
     except Exception as e:
         print(f"TV live data-feed vertraging: {e}")
-        return 0, 0, 0
+        return 0, 0, 0, "NEUTRAL"
+
 
 
 
@@ -339,17 +339,12 @@ def sell_all(reden=""):
 # =============================
 # MAIN
 # =============================
-# =============================
-# MAIN
-# =============================
-# =============================
-# MAIN
-# =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
     global sol_cache, btc_cache, last_history_update, market_mode
-    global laatste_zone, last_tv_update, tv2_buy_cache, tv4_sell_cache
+    global laatste_zone, last_tv_update, tv2_buy_cache, tv4_sell_cache, tv4_osc_cache  # 🟢 HIER ERBIJ PLAKKEN
     global highest_price  # 🟢 NIEUW: Maak de variabele hier bereikbaar
+
 
 
 
@@ -412,22 +407,23 @@ def main():
             # RSI + SWING SIGNALEN
             # =============================
             # Haal TV data alleen op als er 900 seconden (15 min) voorbij zijn gegaan
-            if time.time() - last_tv_update > 900:
-                # 🟢 TIMER DIRECT RESETTEN: Dit dwingt de bot om ALTIJD 15 minuten te wachten, ook bij fouten
+                        if time.time() - last_tv_update > 900:
                 last_tv_update = time.time()
                 try:
-                    tv2_buy_live, _, _ = get_tv_analyse("2h")
-                    _, tv4_sell_live, _ = get_tv_analyse("4h")
+                    tv2_buy_live, _, _, _ = get_tv_analyse("2h")
+                    _, tv4_sell_live, _, tv4_osc_live = get_tv_analyse("4h") # 🟢 BIJGEWERKT
                     
                     if tv2_buy_live > 0 or tv4_sell_live > 0:
                         tv2_buy_cache = tv2_buy_live
                         tv4_sell_cache = tv4_sell_live
+                        tv4_osc_cache = tv4_osc_live # 🟢 NIEUW
                 except Exception as e:
                     print("Fout tijdens ophalen TV live data:", e)
 
-            # Wijs de cache toe aan de actieve variabelen voor de checks hieronder
             tv2_buy = tv2_buy_cache
             tv4_sell = tv4_sell_cache
+            tv4_osc = tv4_osc_cache # 🟢 NIEUW
+
 
 
 
@@ -602,7 +598,9 @@ def main():
                         f"📊 TradingView Live (Binance):\n"
                         f"🟢 2H Buy Score: {tv2_buy} / 26\n"
                         f"❌ 4H Sell Score: {tv4_sell} / 26\n"
-                        f"=========================\n\n"
+                        f"🔍 4H Oscillators: {tv4_osc}\n"
+                        f"=========================\n"
+                        f"=========================\n"
                         f"📊 Check Moving Averages (4H):\nhttps://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=BINANCE&interval=2h\n"
                         f"✅ Kopen: 10+ Buy\n❌ Verkopen: 10+ Sell"
                     )
