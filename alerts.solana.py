@@ -440,33 +440,40 @@ def main():
                 eur, sol = get_balances()
 
 
-                    if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
-                        trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
-                        send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
-                        buy_all()
+                        
+                # --- AUTOMATISCH INKOPEN ---
+                if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
+                    trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
+                    send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
+                    buy_all()
+                    highest_price = sol_price
+                    sol = 1  
+
+                # --- DYNAMISCH WINSTBEHEER & EXITS ---
+                elif sol > 0 and last_buy_price is not None:
+                    if sol_price > highest_price:
                         highest_price = sol_price
-                        sol = 1  
 
-                    elif sol > 0 and last_buy_price is not None:
-                        if sol_price > highest_price:
-                            highest_price = sol_price
+                    # Check A: Winsttarget (1:2 Ratio)
+                    if sol_price >= fvg_target_price:
+                        send(f"🎯 WINSDOEL BEREIKT (1:2 Ratio) — Target €{fvg_target_price:.2f} geraakt!")
+                        sell_all("(Take Profit)")
+                        highest_price = 0
+                        
+                    # Check B: Harde FVG Bodembeveiliging
+                    elif sol_price <= fvg_stop_loss:
+                        send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
+                        sell_all("(Stop Loss)")
+                        highest_price = 0
+                        
+                    # Check C: Dynamische Trailing Winstrust
+                    elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
+                        active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
+                        if sol_price <= active_trailing_level:
+                            send(f"🚀 TRAILING STOP LOSS GETRIGGERD — Winst veiliggesteld op €{sol_price:.2f}")
+                            sell_all("(Trailing Winstrust)")
+                            highest_price = 0
 
-                        if sol_price >= fvg_target_price:
-                            send(f"🎯 WINSDOEL BEREIKT (1:2 Ratio) — Target €{fvg_target_price:.2f} geraakt!")
-                            sell_all("(Take Profit)")
-                            highest_price = 0
-                            
-                        elif sol_price <= fvg_stop_loss:
-                            send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
-                            sell_all("(Stop Loss)")
-                            highest_price = 0
-                            
-                        elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
-                            active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
-                            if sol_price <= active_trailing_level:
-                                send(f"🚀 TRAILING STOP LOSS GETRIGGERD — Winst veiliggesteld op €{sol_price:.2f}")
-                                sell_all("(Trailing Winstrust)")
-                                highest_price = 0
 
             # =============================
             # TELEGRAM COMMANDS
