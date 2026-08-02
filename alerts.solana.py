@@ -134,7 +134,7 @@ def get_candles():
         data = response.json()
         candles = []
         for c in data:
-            # Indexen: 0=timestamp, 1=open, 2=high, 3=low, 4=close
+            # Kolom-indexen: 1=open, 2=high, 3=low, 4=close
             candles.append({
                 "open":  float(c[1]),
                 "high":  float(c[2]),
@@ -155,13 +155,14 @@ def get_history(coin, days):
             print(f"❌ Bitvavo history error {response.status_code}")
             return []
         data = response.json()
-        # Index 4 is de harde sluitingsprijs van de dagkaars
+        # Index 4 is de harde sluitingsprijs van de daggrafiek kaars
         prices = [float(candle[4]) for candle in data]
         prices.reverse()
         return prices
     except Exception as e:
         print(f"❌ Fout in get_history: {e}")
         return []
+
 
 
 
@@ -388,6 +389,7 @@ def main():
 
 
 
+
     while True:
         try:
             now = datetime.now()
@@ -401,7 +403,7 @@ def main():
             sol_price = get_price()
 
             
-            #Veiligere geschiedenis check om crashes te voorkomen (MET INDEX 4 FIX)
+            # Veiligere geschiedenis check om crashes te voorkomen (MET INDEX 4 FIX)
             if time.time() - last_history_update > 300:
                 try:
                     url_geschiedenis = "https://bitvavo.com"
@@ -429,6 +431,7 @@ def main():
                             market_mode = "neutraal"
                 except Exception as e:
                     print("Tijdelijke Bitvavo-vertraging (cache wordt behouden):", e)
+
 
 
             
