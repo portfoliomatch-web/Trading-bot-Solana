@@ -348,8 +348,8 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
     return "WAITING"
 
 
-## =============================
-# MAIN EXECUTIE LOOP (TRADINGVIEW CORE)
+# =============================
+# MAIN EXECUTIE LOOP (100% RECHTE INSPRINGING)
 # =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
@@ -360,7 +360,6 @@ def main():
 
     print("🚀 TradingView data-feed succesvol gekoppeld!")
     
-    # We vullen de interne opstartlijst direct met een geldige basiswaarde om skips te voorkomen
     try:
         sol_cache = [get_price()] * 50
         last_history_update = time.time()
@@ -369,10 +368,6 @@ def main():
         print(f"⚠️ Start-waarschuwing: {e}")
 
     send("🤖 Bot live 🚀 — Swing & Price Action actief via TradingView")
-
-
-
-
 
     while True:
         try:
@@ -386,23 +381,15 @@ def main():
             messages = check_messages()
             sol_price = get_price()
 
-            
-            # Veiligere geschiedenis check om crashes te voorkomen (MET INDEX 4 FIX)
             if time.time() - last_history_update > 300:
                 try:
-                    url_geschiedenis = "https://bitvavo.com"
-                    resp_geschiedenis = requests.get(url_geschiedenis)
-                    if resp_geschiedenis.status_code == 200:
-                        sol_cache = [float(candle[4]) for candle in resp_geschiedenis.json()]
-                        sol_cache.reverse()
-                        last_history_update = time.time()
-
+                    sol_cache = get_history("solana", 50)
+                    last_history_update = time.time()
                     url_trend = "https://bitvavo.com"
                     resp_trend = requests.get(url_trend)
                     if resp_trend.status_code == 200:
                         dag_candles_trend = []
                         for c in resp_trend.json():
-                            # c[4] is de sluitingsprijs van de trendmeting
                             dag_candles_trend.append({"close": float(c[4])})
                         dag_candles_trend.reverse()
                         dag_closes = [c["close"] for c in dag_candles_trend]
@@ -414,21 +401,14 @@ def main():
                         else:
                             market_mode = "neutraal"
                 except Exception as e:
-                    print("Tijdelijke Bitvavo-vertraging (cache wordt behouden):", e)
-
-
-
-            
+                    print("History error:", e)
 
             if not sol_cache or len(sol_cache) < 20:
-                print("Wachten op herstel van datafeed...")
-                time.sleep(30) # Geef de API meer rust bij een blokkade
+                print("Nog niet genoeg data...")
+                time.sleep(15)
                 continue
 
             # ==========================================================
-            # ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
-            # ==========================================================
-                        # ==========================================================
             # ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
             # ==========================================================
             if trading_active:
@@ -439,8 +419,6 @@ def main():
                 signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
                 eur, sol = get_balances()
 
-
-                        
                 # --- AUTOMATISCH INKOPEN ---
                 if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
                     trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
@@ -474,7 +452,6 @@ def main():
                             sell_all("(Trailing Winstrust)")
                             highest_price = 0
 
-
             # =============================
             # TELEGRAM COMMANDS
             # =============================
@@ -494,7 +471,7 @@ def main():
                         f"Doji Dag: {'⚠️ Ja' if is_doji_day else '❌ Nee'}\n"
                         f"=========================\n"
                         f"🔗 Live Grafiek & Analyse:\n"
-                        f"https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=BINANCE&interval=2h\n"
+                        f"https://tradingview.com\n"
                         f"========================="
                     )
                     
@@ -527,8 +504,7 @@ def main():
         except Exception as e:
             print("Fout in hoofdloop:", e)
 
-        time.sleep(60) # Verhoogd naar 20 seconden om de server ademruimte te geven
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
-
