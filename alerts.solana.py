@@ -120,8 +120,8 @@ def get_tv_analyse(interval_string):
         print(f"TV live data-feed vertraging: {e}")
         return 0, 0, 0, "NEUTRAL"
 
-# =============================
-# SWING SIGNAAL (MET RECHTE BITVAVO-INDEXEN)
+## =============================
+# SWING SIGNAAL (MET RECHTE BITVAVO-API EN INDEXEN)
 # =============================
 def get_candles():
     try:
@@ -133,7 +133,7 @@ def get_candles():
         data = response.json()
         candles = []
         for c in data:
-            # Indexen: [timestamp, open, high, low, close, volume]
+            # Bitvavo geeft een lijst van getallen terug
             candles.append({
                 "open":  float(c[1]),
                 "high":  float(c[2]),
@@ -160,6 +160,7 @@ def get_history(coin, days):
     except Exception as e:
         print(f"❌ Fout in get_history: {e}")
         return []
+
 
 
 
