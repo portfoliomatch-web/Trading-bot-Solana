@@ -14,24 +14,24 @@ API_SECRET = os.getenv("API_SECRET")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-# ==========================================================
-# 📊 BOT CONFIGURATIE & STATE (ALLES NETJES BOVENAAN)
-# ==========================================================
+# =============================
+# STATE (AANGEPAST)
+# =============================
 trading_active = True
 last_update_id = None
 last_buy_price = None
 market_mode = "neutraal"
 last_analysis_day = None
 
-STOP_LOSS_PERCENT     = 0.06    # 6% stop loss
-FEE                   = 0.0025  # Bitvavo taker fee 0.25%
-MIN_PROFIT_AFTER_FEE  = FEE * 2 + 0.005  # minimaal 1% netto winst
+STOP_LOSS_PERCENT     = 0.06    
+FEE                   = 0.0025  
+MIN_PROFIT_AFTER_FEE  = FEE * 2 + 0.005  
 laatste_zone = None
 
-# Pure Swing & Price Action Instellingen (Geen EMA/Oscillators meer)
-TRAILING_STOP_PERCENT = 0.015  # 1.5% trailing stop-loss
-PROFIT_ACTIVATION     = 0.01   # Trailing pas actief na +1.0% winst
-RISK_REWARD_RATIO     = 2.0    # Vaste 1:2 verhouding voor targets
+# Pure Swing & Price Action Instellingen
+TRAILING_STOP_PERCENT = 0.015  
+PROFIT_ACTIVATION     = 0.01   
+RISK_REWARD_RATIO     = 2.0    
 
 opening_high = 0
 opening_low = 0
@@ -40,6 +40,7 @@ fvg_stop_loss = 0
 is_doji_day = False
 range_is_set = False
 last_checked_day = None
+
 
 # =============================
 # CACHE (ANTI 429)
@@ -326,13 +327,12 @@ def sell_all(reden=""):
         last_buy_price = None
 
 # ==========================================================
-# 🔍 STRATEGIE SENSORS: DOJI, OPENING RANGE & FVG DETECTIE
+# 🔍 STRATEGIE SENSORS: DOJI, OPENING RANGE & FVG DETECTIE (NIEUW)
 # ==========================================================
 def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
     global opening_high, opening_low, range_is_set, is_doji_day
     global fvg_target_price, fvg_stop_loss, last_checked_day
 
-    # 1. Dagelijkse Doji Filter (Elke nacht om 01:01 uur jouw tijd)
     if now.hour == 0 and now.minute == 1 and last_checked_day != now.day:
         last_checked_day = now.day
         if len(daily_candles) > 0:
@@ -342,7 +342,6 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
             is_doji_day = (body_grootte / totale_range) <= 0.10 if totale_range > 0 else False
             range_is_set = False  
 
-    # 2. Opening Range Vastzetten (Exact om 09:35 uur, na de eerste 5-minuten kaars)
     if now.hour == 9 and now.minute == 35 and not range_is_set:
         if len(candles_m5) > 0:
             first_candle = candles_m5[-1]
@@ -350,7 +349,6 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
             opening_low = first_candle["low"]
             range_is_set = True
 
-    # 3. 1-Minuut Fair Value Gap (FVG) Uitbraak Scanner
     if range_is_set and len(candles_m1) >= 3:
         c1, c2, c3 = candles_m1[-3], candles_m1[-2], candles_m1[-1]
         if c3["close"] > opening_high and c3["low"] > c1["high"]:
@@ -359,6 +357,7 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
             fvg_target_price = c3["close"] + (risk * RISK_REWARD_RATIO)  
             return "BUY_SIGNAL"
     return "WAITING"
+
 
 # =============================
 # MAIN EXECUTIE LOOP (DEFINITIEVE URL FIX)
@@ -423,7 +422,7 @@ def main():
                 time.sleep(15)
                 continue
 
-            # ==========================================================
+                        # ==========================================================
             # ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
             # ==========================================================
             if trading_active:
@@ -431,7 +430,6 @@ def main():
                 signal = scan_market_structure(now, candles, candles, candles)
                 eur, sol = get_balances()
 
-                # --- AUTOMATISCH INKOPEN ---
                 if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
                     trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
                     send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
@@ -439,24 +437,20 @@ def main():
                     highest_price = sol_price
                     sol = 1  
 
-                # --- DYNAMISCH WINSTBEHEER & EXITS ---
                 elif sol > 0 and last_buy_price is not None:
                     if sol_price > highest_price:
                         highest_price = sol_price
 
-                    # Check A: Winsttarget (1:2 Ratio)
                     if sol_price >= fvg_target_price:
                         send(f"🎯 WINSDOEL BEREIKT (1:2 Ratio) — Target €{fvg_target_price:.2f} geraakt!")
                         sell_all("(Take Profit)")
                         highest_price = 0
                         
-                    # Check B: Harde FVG Bodembeveiliging
                     elif sol_price <= fvg_stop_loss:
                         send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
                         sell_all("(Stop Loss)")
                         highest_price = 0
                         
-                    # Check C: Dynamische Trailing Winstrust
                     elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
                         active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
                         if sol_price <= active_trailing_level:
@@ -464,13 +458,14 @@ def main():
                             sell_all("(Trailing Winstrust)")
                             highest_price = 0
 
+
             # =============================
             # TELEGRAM COMMANDS
             # =============================
             for msg in messages:
                 if "/analyse" in msg:
                     send(analyse_market())
-                    
+                                
                 elif "/update" in msg:
                     eur, sol = get_balances()
                     totaal = eur + (sol * sol_price)
@@ -486,6 +481,8 @@ def main():
                         f"https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=BINANCE&interval=2h\n"
                         f"========================="
                     )
+  
+                
                     
                 elif "/pauzeon" in msg:
                     trading_active = False
