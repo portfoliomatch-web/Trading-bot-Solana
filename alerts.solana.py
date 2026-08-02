@@ -365,6 +365,9 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 # =============================
 # MAIN (MET DIRECTE CACHE FORCEER ACTIE)
 # =============================
+# =============================
+# MAIN (MET DIRECTE INDEX CORRECTIE)
+# =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
     global sol_cache, last_history_update, market_mode
@@ -377,14 +380,16 @@ def main():
         url_init = "https://bitvavo.com"
         resp_init = requests.get(url_init)
         if resp_init.status_code == 200:
+            # Pakt specifiek de sluitingsprijs op index 4 [timestamp, open, high, low, close, vol]
             sol_cache = [float(candle[4]) for candle in resp_init.json()]
             sol_cache.reverse()
             last_history_update = time.time()
-            print("✅ Eerste cache succesvol gevuld met 50 kaarsen!")
+            print("✅ Eerste cache succesvol gevuld met 50 sluitingsprijzen!")
     except Exception as e:
         print(f"❌ Forceer-check mislukt: {e}")
 
     send("🤖 Bot live 🚀 — Swing & Price Action actief")
+
 
     while True:
         try:
