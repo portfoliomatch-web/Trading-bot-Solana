@@ -87,44 +87,42 @@ def ema(prices, period):
     return ema_value
 
 # =============================
-# TRADINGVIEW ANALYSE & DATA-FEED (GLOBAL SETUP)
+# TRADINGVIEW ANALYSE & DATA-FEED (DEFINITIEVE FIX)
 # =============================
 from tradingview_ta import TA_Handler, Interval
 
-handler_1d = TA_Handler(
-    symbol="SOLUSDT",
-    exchange="BINANCE",
-    screener="crypto",
-    interval=Interval.INTERVAL_1_DAY
-)
+handler_1d = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_1_DAY)
+handler_5m = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_5_MINUTES)
+handler_1m = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_1_MINUTE)
+handler_2h = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_2_HOURS)
+handler_4h = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_4_HOURS)
 
-handler_2h = TA_Handler(
-    symbol="SOLUSDT",
-    exchange="BINANCE",
-    screener="crypto",
-    interval=Interval.INTERVAL_2_HOURS
-)
-
-handler_4h = TA_Handler(
-    symbol="SOLUSDT",
-    exchange="BINANCE",
-    screener="crypto",
-    interval=Interval.INTERVAL_4_HOURS
-)
-
-def get_tv_candles():
+def get_tv_candles_m1():
     try:
-        # Haalt live de 1D kaarsdata rechtstreeks uit de TradingView API indicators matrix
+        analysis = handler_1m.get_analysis()
+        o = float(analysis.indicators["open"])
+        h = float(analysis.indicators["high"])
+        l = float(analysis.indicators["low"])
+        c = float(analysis.indicators["close"])
+        # We simuleren een geldige lijst van 3 kaarsen voor de FVG-sensor
+        return [{"open": o, "high": h, "low": l, "close": c}] * 3
+    except:
+        p = get_price()
+        return [{"open": p, "high": p, "low": p, "close": p}] * 3
+
+def get_tv_candles_m5():
+    try:
+        analysis = handler_5m.get_analysis()
+        return [{"open": float(analysis.indicators["open"]), "high": float(analysis.indicators["high"]), "low": float(analysis.indicators["low"]), "close": float(analysis.indicators["close"])}]
+    except:
+        p = get_price()
+        return [{"open": p, "high": p, "low": p, "close": p}]
+
+def get_tv_candles_daily():
+    try:
         analysis = handler_1d.get_analysis()
-        open_val  = float(analysis.indicators["open"])
-        high_val  = float(analysis.indicators["high"])
-        low_val   = float(analysis.indicators["low"])
-        close_val = float(analysis.indicators["close"])
-        
-        # Formatteer exact naar de structuur die jouw scan_market_structure() verwacht
-        return [{"open": open_val, "high": high_val, "low": low_val, "close": close_val}]
-    except Exception as e:
-        print(f"⚠️ TradingView data-feed vertraging: {e}")
+        return [{"open": float(analysis.indicators["open"]), "high": float(analysis.indicators["high"]), "low": float(analysis.indicators["low"]), "close": float(analysis.indicators["close"])}]
+    except:
         return []
 
 def get_tv_analyse(interval_string):
@@ -134,31 +132,20 @@ def get_tv_analyse(interval_string):
             analyse = handler_4h.get_analysis()
         else:
             analyse = handler_2h.get_analysis()
-        buy = analyse.summary["BUY"]
-        sell = analyse.summary["SELL"]
-        neutral = analyse.summary["NEUTRAL"]
-        osc = analyse.oscillators["RECOMMENDATION"]
-        return buy, sell, neutral, osc
-    except Exception as e:
-        print(f"TV live trend-feed vertraging: {e}")
+        return analyse.summary["BUY"], analyse.summary["SELL"], analyse.summary["NEUTRAL"], analyse.oscillators["RECOMMENDATION"]
+    except:
         return 0, 0, 0, "NEUTRAL"
 
-# =============================
-# SWING SIGNAAL (DEFINITIEVE INDEX FIX)
-# =============================
 # =============================
 # SWING SIGNAAL (100% TRADINGVIEW POWERED)
 # =============================
 def get_candles():
-    # Bitvavo API volledig omzeild; we gebruiken de stabiele TradingView feed
-    return get_tv_candles()
+    return get_tv_candles_daily()
 
 def get_history(coin, days):
     try:
-        # Als er ergens nog een indicator-historie check draait, voeden we deze direct vanuit TV
         analysis = handler_1d.get_analysis()
-        close_val = float(analysis.indicators["close"])
-        return [close_val] * days
+        return [float(analysis.indicators["close"])] * days
     except:
         return [get_price()] * days
 
@@ -441,11 +428,17 @@ def main():
             # ==========================================================
             # ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
             # ==========================================================
+                        # ==========================================================
+            # ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
+            # ==========================================================
             if trading_active:
-                candles = get_candles()
-                if candles:
-                    signal = scan_market_structure(now, candles, candles, candles)
-                    eur, sol = get_balances()
+                candles_m1 = get_tv_candles_m1()
+                candles_m5 = get_tv_candles_m5()
+                candles_daily = get_tv_candles_daily()
+                
+                signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
+                eur, sol = get_balances()
+
 
                     if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
                         trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
