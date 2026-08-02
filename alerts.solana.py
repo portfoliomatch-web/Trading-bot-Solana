@@ -403,163 +403,113 @@ def main():
                 continue
 
              
-            # =============================
-            # RSI + SWING SIGNALEN
-            # =============================
-            # Haal TV data alleen op als er 900 seconden (15 min) voorbij zijn gegaan
-            if time.time() - last_tv_update > 900:
-                last_tv_update = time.time()
-                try:
-                    tv2_buy_live, _, _, _ = get_tv_analyse("2h")
-                    _, tv4_sell_live, _, tv4_osc_live = get_tv_analyse("4h") # 🟢 BIJGEWERKT
-                    
-                    if tv2_buy_live > 0 or tv4_sell_live > 0:
-                        tv2_buy_cache = tv2_buy_live
-                        tv4_sell_cache = tv4_sell_live
-                        tv4_osc_cache = tv4_osc_live # 🟢 NIEUW
-                except Exception as e:
-                    print("Fout tijdens ophalen TV live data:", e)
+## ==========================================================
+# 📊 NEW CONFIGURATION & BOT STATE
+# ==========================================================
+# Risicobeheer instellingen (Geen indicatoren meer nodig)
+TRAILING_STOP_PERCENT = 0.015  # 1.5% trailing stop-loss
+PROFIT_ACTIVATION     = 0.01   # Trailing pas actief na +1.0% winst
+RISK_REWARD_RATIO     = 2.0    # Vaste 1:2 verhouding voor targets
 
-            tv2_buy = tv2_buy_cache
-            tv4_sell = tv4_sell_cache
-            tv4_osc = tv4_osc_cache # 🟢 NIEUW
+# State variabelen voor het nieuwe mechanisme
+opening_high = 0
+opening_low = 0
+fvg_target_price = 0
+fvg_stop_loss = 0
+is_doji_day = False
+range_is_set = False
+last_checked_day = None
 
+# ==========================================================
+# 🔍 STRATEGIE SENSORS: DOJI, OPENING RANGE & FVG DETECTIE
+# ==========================================================
+def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
+    global opening_high, opening_low, range_is_set, is_doji_day
+    global fvg_target_price, fvg_stop_loss, last_checked_day
 
+    # 1. Dagelijkse Doji Filter (Elke nacht om 01:01 uur jouw tijd)
+    if now.hour == 0 and now.minute == 1 and last_checked_day != now.day:
+        last_checked_day = now.day
+        if len(daily_candles) > 0:
+            yesterday = daily_candles[-1]
+            totale_range = yesterday["high"] - yesterday["low"]
+            body_grootte = abs(yesterday["close"] - yesterday["open"])
+            # Doji definitie: Body is kleiner dan of gelijk aan 10% van de totale range
+            is_doji_day = (body_grootte / totale_range) <= 0.10 if totale_range > 0 else False
+            range_is_set = False  # Reset opening range voor de nieuwe dag
 
+    # 2. Opening Range Vastzetten (Exact om 09:35 uur, na de eerste 5-minuten kaars)
+    # Let op: Tijdstip is af te stemmen op de gewenste geografische marktopening
+    if now.hour == 9 and now.minute == 35 and not range_is_set:
+        if len(candles_m5) > 0:
+            first_candle = candles_m5[-1]
+            opening_high = first_candle["high"]
+            opening_low = first_candle["low"]
+            range_is_set = True
 
-            ema20 = ema(sol_cache, 7)
-            ema50 = ema(sol_cache, 20)
-            bull_trend = ema20 > (ema50 + 0.50)
-            candle_kleur = "🟢 Groen" if sol_cache[-1] > sol_cache[-2] else "🔴 Rood"
-            eur, sol = get_balances()
+    # 3. 1-Minuut Fair Value Gap (FVG) Uitbraak Scanner
+    if range_is_set and len(candles_m1) >= 3:
+        c1, c2, c3 = candles_m1[-3], candles_m1[-2], candles_m1[-1]
+        
+        # Bullish Uitbraak + FVG (Gat tussen high van 1 en low van 3)
+        if c3["close"] > opening_high and c3["low"] > c1["high"]:
+            fvg_gap_size = c3["low"] - c1["high"]
+            risk = c3["close"] - c1["high"]
+            
+            fvg_stop_loss = c1["high"]  # Harde bodem vlak onder de gap
+            fvg_target_price = c3["close"] + (risk * RISK_REWARD_RATIO)  # Harde 1:2 winsttarget
+            return "BUY_SIGNAL"
 
-            # =============================
-            # ✅ SWING STRATEGIE
-            # =============================
-            if trading_active:
+    return "WAITING"
 
-                # 24/7 support/resistance melding
-                candles = get_candles()
-                
-                # Laatste lokale high en low vanaf vandaag terugkijkend
-                recent_lows = [c["low"] for c in candles[-14:]]
-                recent_highs = [c["high"] for c in candles[-14:]]
-                
-                # Bearish → laagste low zoeken
-                # Bullish → hoogste high zoeken
-                if not bull_trend:
-                    low_7d = min(c["low"] for c in candles[-7:])
-                    high_7d = max(c["high"] for c in candles[-7:])
-                else:
-                    low_7d = min(c["low"] for c in candles[-7:])
-                    high_7d = max(c["high"] for c in candles[-7:])
-                
-                
-                
-                near_support = sol_price <= low_7d + 1.00
-                near_resistance = sol_price >= high_7d - 1.00
-                               
-                
+# ==========================================================
+# ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
+# ==========================================================
+# Plak dit deel inside jouw bestaande `while True` loop waar 'if trading_active:' staat:
 
+    if trading_active:
+        # Haal de benodigde kaarsdata live op uit je databronnen
+        candles_m1 = get_candles() # Pas aan naar de juiste M1 feed indien beschikbaar
+        candles_m5 = get_candles() # Pas aan naar de juiste M5 feed indien beschikbaar
+        daily_candles = get_candles() # Maakt al gebruik van je bestaande daggrafiek feed
+        
+        signal = scan_market_structure(now, candles_m1, candles_m5, daily_candles)
+        
+        # --- AUTOMATISCH KOPEN OP BASIS VAN PRIJS EN VOLUME ---
+        if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
+            # Pas startbedrag aan op basis van het Doji-filter (Agressiever als gisteren een Doji was)
+            trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
+            send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
+            buy_all()
+            highest_price = sol_price
+            sol = 1  # Direct vergrendelen tegen dubbele aankopen
+            
+        # --- AUTOMATISCH VERKOPEN EN DYNAMISCH WINSTBEHEER ---
+        elif sol > 0 and last_buy_price is not None:
+            # Update de hoogst behaalde koers tijdens de rit
+            if sol_price > highest_price:
+                highest_price = sol_price
 
-                # --- Naderende Zones & Live TV Scores Meldingen ---
-                if near_support and laatste_zone != "support":
-                    laatste_zone = "support"
-                    status_tekst = "🚀 ALLES GROEN — KOOP SIGNAAL" if (bull_trend and candle_kleur == "🟢 Groen") else f"🟢 NADERENDE KOOP ZONE (TV Buy: {tv2_buy})"
+            # Check A: Harde 1:2 Winsttarget Bereikt
+            if sol_price >= fvg_target_price:
+                send(f"🎯 WINSDOEL BEREIKT (1:2 Ratio) — Target €{fvg_target_price:.2f} geraakt!")
+                sell_all("(Take Profit)")
+                highest_price = 0
 
-                    send(
-                        f"{status_tekst}\n"
-                        f"SOL: €{sol_price:.2f} | Support: €{low_7d:.2f}\n"
-                        f"TV 2H Buy: {tv2_buy} | 4H Sell: {tv4_sell}"
-                    )
-                    
-                elif near_resistance and laatste_zone != "resistance":
-                    laatste_zone = "resistance"
-                    status_tekst = "🚨 ALLES ROOD — VERKOOP SIGNAAL" if (not bull_trend and candle_kleur == "🔴 Rood") else f"🔴 NADERENDE VERKOOP ZONE (TV Sell: {tv4_sell})"
-                    
-                    send(
-                        f"{status_tekst}\n"
-                        f"SOL: €{sol_price:.2f} | Resistance: €{high_7d:.2f}\n"
-                        f"TV 2H Buy: {tv2_buy} | 4H Sell: {tv4_sell}"
-                    )
-                    
-                elif not near_support and not near_resistance:
-                    laatste_zone = None
+            # Check B: Harde Initiële FVG Stop Loss Ruisbescherming
+            elif sol_price <= fvg_stop_loss:
+                send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
+                sell_all("(Stop Loss)")
+                highest_price = 0
 
-
-
-                # Definieer eerst de tijdsluiting, zodat de aankoop er ook naar kan kijken
-                is_4h_sluiting = (now.hour % 4 == 0 and now.minute <= 5)
-                
-                # --- AUTOMATISCH KOPEN (Agressieve 2H Momentum Inkoop) ---
-                # Deze staat 24/7 op scherp. Zodra het volume omslaat naar BUY, koopt de bot direct.
-                # --- AUTOMATISCH KOPEN (Agressieve 2H Momentum Inkoop) ---
-                if sol < 0.01 and eur > 5 and tv2_buy >= 10:
-                    send(f"🛒 MOMENTUM BUY (2H) — 2H Buy score: {tv2_buy} | SOL: €{sol_price:.2f}")
-                    buy_all()
-                    
-                    # 🟢 PLAK DEZE REGEL HIER:
-                    sol = 1  # Blokkeert direct de aankoopknop in de volgende loop-seconde
-
-
-
-                # --- AUTOMATISCH VERKOPEN (Alleen op de 4H Candle-Close) ---
-                # De 4H kaarsen sluiten om de 4 uur (de uren deelbaar door 4: 0, 4, 8, 12, 16, 20)
-                # We controleren alleen in de eerste 5 minuten van dat nieuwe 4-uurs blok.
-                is_4h_sluiting = (now.hour % 4 == 0 and now.minute <= 5)
-
-                if sol > 0 and last_buy_price and tv4_sell >= 10 and is_4h_sluiting:
-                    send(f"📉 TV 4H CLOSE SELL — 4H Sell score: {tv4_sell} | SOL: €{sol_price:.2f}")
-                    sell_all("(TV 4H gesloten signaal)")
-
-                
-
-
-                # =============================
-                # SLIMME HYBRIDE EXIT: 4H SELL, 3% RISK OR 6% TRAIL
-                # =============================
-                if highest_price == 0 or sol_price > highest_price:
-                    highest_price = sol_price
-
-                # 1. Indicator Check: Alleen verkopen op de officiële 4H kaars-sluiting
-                if sol > 0 and last_buy_price is not None and tv4_sell >= 10 and is_4h_sluiting:
-                    send(f"📉 TV 4H CLOSE SELL — 4H Sell score: {tv4_sell} | SOL: €{sol_price:.2f}")
-                    sell_all("(TV 4H gesloten signaal)")
+            # Check C: Dynamische Trailing Stop Loss (Zodra er minimaal +1% winst is opgebouwd)
+            elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
+                active_trailing_level = highest_price * (1 - TRALING_STOP_PERCENT)
+                if sol_price <= active_trailing_level:
+                    send(f"🚀 TRAILING STOP LOSS GETRIGGERD — Winst veiliggesteld op €{sol_price:.2f} vanaf top €{highest_price:.2f}")
+                    sell_all("(Trailing Winstrust)")
                     highest_price = 0
 
-                # 2. Harde Prijs Check: Alleen berekenen als last_buy_price bekend is
-                elif sol > 0 and last_buy_price is not None:
-                    # Bepaal het actieve stop-niveau
-                    if highest_price <= last_buy_price * 1.03:
-                        active_stop_level = last_buy_price * 0.97  # Strakke 3% risicobeperking
-                    else:
-                        active_stop_level = highest_price * 0.94   # Ruime 6% winstbescherming
-
-                    # Grijp live in bij een trendbreuk
-                    if sol_price <= active_stop_level:
-                        if highest_price <= last_buy_price * 1.03:
-                            reason = f"🚨 INITIAL STOP LOSS (3%) — Risico beperkt! | SOL: €{sol_price:.2f} | Entry was: €{last_buy_price:.2f}"
-                        else:
-                            reason = f"🚀 TRAILING WINSTRUST (6%) — Winst veilig! | SOL: €{sol_price:.2f} | Top was: €{highest_price:.2f}"
-                        send(reason)
-                        sell_all("(hybride stop loss)")
-                        highest_price = 0
-
-
-
-
-                    
-                    
-                
-                # Uitbraak detectie
-                if sol_price > high_7d and laatste_zone != "uitbraak":
-                    laatste_zone = "uitbraak"
-                    send(
-                        f"🚀 UITBRAAK BOVEN RESISTANCE!\n"
-                        f"SOL: €{sol_price:.2f} | Resistance was: €{high_7d:.2f}\n"
-                        f"Nieuwe swing omhoog mogelijk!\n"
-                        f"Vasthouden of bijkopen?"
-                    )
             # =============================
             # COMMANDS
             # =============================
