@@ -527,7 +527,7 @@ def main():
         except Exception as e:
             print("Fout in hoofdloop:", e)
 
-        time.sleep(20) # Verhoogd naar 20 seconden om de server ademruimte te geven
+        time.sleep(60) # Verhoogd naar 20 seconden om de server ademruimte te geven
 
 if __name__ == "__main__":
     main()
