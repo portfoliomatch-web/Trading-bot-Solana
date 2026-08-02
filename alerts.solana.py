@@ -121,7 +121,7 @@ def get_tv_analyse(interval_string):
         return 0, 0, 0, "NEUTRAL"
 
 # =============================
-# SWING SIGNAAL
+# SWING SIGNAAL (GEFIXT)
 # =============================
 def get_candles():
     url = "https://bitvavo.com"
@@ -137,6 +137,15 @@ def get_candles():
         })
     candles.reverse()
     return candles
+
+def get_history(coin, days):
+    url = f"https://bitvavo.com{days}"
+    response = requests.get(url)
+    data = response.json()
+    prices = [float(candle[4]) for candle in data]
+    prices.reverse()
+    return prices
+
 
 # =============================
 # TELEGRAM
@@ -366,7 +375,7 @@ def main():
                     resp_trend = requests.get(url_trend)
                     dag_candles_trend = []
                     for c in resp_trend.json():
-                        dag_candles_trend.append({"close": float(c)})
+                        dag_candles_trend.append({"close": float(c[4])})
                     dag_candles_trend.reverse()
                     dag_closes = [c["close"] for c in dag_candles_trend]
                     trend_dag = bepaal_trend(dag_closes)
@@ -478,6 +487,7 @@ def main():
             print("Fout:", e)
 
         time.sleep(15)
+
 
 if __name__ == "__main__":
     main()
