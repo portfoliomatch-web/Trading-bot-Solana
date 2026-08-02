@@ -121,30 +121,46 @@ def get_tv_analyse(interval_string):
         return 0, 0, 0, "NEUTRAL"
 
 # =============================
-# SWING SIGNAAL (100% CORREKT)
+# SWING SIGNAAL (MET RECHTE BITVAVO-INDEXEN)
 # =============================
 def get_candles():
-    url = "https://bitvavo.com"
-    response = requests.get(url)
-    data = response.json()
-    candles = []
-    for c in data:
-        candles.append({
-            "open":  float(c[1]),
-            "high":  float(c[2]),
-            "low":   float(c[3]),
-            "close": float(c[4]),
-        })
-    candles.reverse()
-    return candles
+    try:
+        url = "https://bitvavo.com"
+        response = requests.get(url)
+        if response.status_code != 200:
+            print(f"❌ Bitvavo candles error {response.status_code}")
+            return []
+        data = response.json()
+        candles = []
+        for c in data:
+            # Indexen: [timestamp, open, high, low, close, volume]
+            candles.append({
+                "open":  float(c[1]),
+                "high":  float(c[2]),
+                "low":   float(c[3]),
+                "close": float(c[4]),
+            })
+        candles.reverse()
+        return candles
+    except Exception as e:
+        print(f"❌ Fout in get_candles: {e}")
+        return []
 
 def get_history(coin, days):
-    url = f"https://bitvavo.com{days}"
-    response = requests.get(url)
-    data = response.json()
-    prices = [float(candle[4]) for candle in data]
-    prices.reverse()
-    return prices
+    try:
+        url = f"https://bitvavo.com{days}"
+        response = requests.get(url)
+        if response.status_code != 200:
+            print(f"❌ Bitvavo history error {response.status_code}")
+            return []
+        data = response.json()
+        prices = [float(candle[4]) for candle in data] # Pak de sluitingsprijs (index 4)
+        prices.reverse()
+        return prices
+    except Exception as e:
+        print(f"❌ Fout in get_history: {e}")
+        return []
+
 
 
 
