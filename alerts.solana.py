@@ -121,7 +121,7 @@ def get_tv_analyse(interval_string):
         return 0, 0, 0, "NEUTRAL"
 
 # =============================
-# SWING SIGNAAL (GEFIXT)
+# SWING SIGNAAL (100% CORREKT)
 # =============================
 def get_candles():
     url = "https://bitvavo.com"
@@ -145,6 +145,7 @@ def get_history(coin, days):
     prices = [float(candle[4]) for candle in data]
     prices.reverse()
     return prices
+
 
 
 # =============================
