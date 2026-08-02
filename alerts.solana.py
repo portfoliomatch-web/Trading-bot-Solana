@@ -344,7 +344,7 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
     return "WAITING"
 
 # =============================
-# MAIN EXECUTIE LOOP
+# MAIN EXECUTIE LOOP (DEFINITIEVE URL FIX)
 # =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
@@ -370,7 +370,12 @@ def main():
 
             if time.time() - last_history_update > 300:
                 try:
-                    sol_cache = get_history("solana", 50)
+                    # RECHTSTREEKSE SCHONE API-AANROEP OM DE COIN50-BUG HIER VOLLEDIG TE OVERSCHRIJVEN
+                    url_clean = "https://bitvavo.com"
+                    resp_clean = requests.get(url_clean)
+                    sol_cache = [float(candle[4]) for candle in resp_clean.json()]
+                    sol_cache.reverse()
+                    
                     last_history_update = time.time()
                     url_trend = "https://bitvavo.com"
                     resp_trend = requests.get(url_trend)
@@ -390,7 +395,14 @@ def main():
                     print("History error:", e)
 
             if not sol_cache or len(sol_cache) < 20:
-                print("Nog niet genoeg data...")
+                print("Nog niet genoeg data in cache...")
+                # Noodgreep om direct data te forceren bij herstart
+                try:
+                    url_clean = "https://bitvavo.com"
+                    sol_cache = [float(candle[4]) for candle in requests.get(url_clean).json()]
+                    sol_cache.reverse()
+                except:
+                    pass
                 time.sleep(15)
                 continue
 
@@ -489,7 +501,5 @@ def main():
 
         time.sleep(15)
 
-
 if __name__ == "__main__":
     main()
-
