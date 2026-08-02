@@ -121,8 +121,8 @@ def get_tv_analyse(interval_string):
         print(f"TV live data-feed vertraging: {e}")
         return 0, 0, 0, "NEUTRAL"
 
-## =============================
-# SWING SIGNAAL (MET RECHTE BITVAVO-API EN INDEXEN)
+# =============================
+# SWING SIGNAAL (DEFINITIEVE INDEX FIX)
 # =============================
 def get_candles():
     try:
@@ -134,7 +134,7 @@ def get_candles():
         data = response.json()
         candles = []
         for c in data:
-            # Bitvavo geeft een lijst van getallen terug
+            # Indexen: 0=timestamp, 1=open, 2=high, 3=low, 4=close
             candles.append({
                 "open":  float(c[1]),
                 "high":  float(c[2]),
@@ -155,7 +155,8 @@ def get_history(coin, days):
             print(f"❌ Bitvavo history error {response.status_code}")
             return []
         data = response.json()
-        prices = [float(candle[4]) for candle in data] # Pak de sluitingsprijs (index 4)
+        # Index 4 is de harde sluitingsprijs van de dagkaars
+        prices = [float(candle[4]) for candle in data]
         prices.reverse()
         return prices
     except Exception as e:
@@ -360,16 +361,7 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 
 
 # =============================
-# MAIN (VEILIGE REFRESH)
-# =============================
-# =============================
-# MAIN (MET DIRECTE CACHE FORCEER ACTIE)
-# =============================
-# =============================
-# MAIN (MET DIRECTE INDEX CORRECTIE)
-# =============================
-# =============================
-# MAIN (MET DE JUISTE COIN-LINK)
+# MAIN EXECUTIE LOOP (START MET INDEX FIX)
 # =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
@@ -380,19 +372,19 @@ def main():
 
     print("⏳ Cache direct vullen bij opstarten...")
     try:
-        # Dit MOET de api.bitvavo link zijn, anders crasht de datafeed!
         url_init = "https://bitvavo.com"
         resp_init = requests.get(url_init)
         if resp_init.status_code == 200:
-            # Pakt specifiek de sluitingsprijs op index 4 [timestamp, open, high, low, close, vol]
+            # Pakt exact de sluitingsprijs op index 4
             sol_cache = [float(candle[4]) for candle in resp_init.json()]
             sol_cache.reverse()
             last_history_update = time.time()
-            print("✅ Eerste cache succesvol gevuld met 50 sluitingsprijzen!")
+            print("✅ Eerste cache succesvol gevuld met 50 dagsomslagen!")
     except Exception as e:
         print(f"❌ Forceer-check mislukt: {e}")
 
     send("🤖 Bot live 🚀 — Swing & Price Action actief")
+
 
 
 
@@ -408,11 +400,10 @@ def main():
             messages = check_messages()
             sol_price = get_price()
 
-            # Veiligere geschiedenis check om 429 crashes te voorkomen
-                        # Veiligere geschiedenis check om 429 crashes te voorkomen (100% URL FIX)
+            
+            #Veiligere geschiedenis check om crashes te voorkomen (MET INDEX 4 FIX)
             if time.time() - last_history_update > 300:
                 try:
-                    # We roepen de API hier direct aan zonder tussenkomst van get_history
                     url_geschiedenis = "https://bitvavo.com"
                     resp_geschiedenis = requests.get(url_geschiedenis)
                     if resp_geschiedenis.status_code == 200:
@@ -425,6 +416,7 @@ def main():
                     if resp_trend.status_code == 200:
                         dag_candles_trend = []
                         for c in resp_trend.json():
+                            # c[4] is de sluitingsprijs van de trendmeting
                             dag_candles_trend.append({"close": float(c[4])})
                         dag_candles_trend.reverse()
                         dag_closes = [c["close"] for c in dag_candles_trend]
@@ -437,6 +429,7 @@ def main():
                             market_mode = "neutraal"
                 except Exception as e:
                     print("Tijdelijke Bitvavo-vertraging (cache wordt behouden):", e)
+
 
             
 
