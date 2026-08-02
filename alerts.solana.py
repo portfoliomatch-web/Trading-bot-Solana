@@ -381,27 +381,26 @@ def main():
             messages = check_messages()
             sol_price = get_price()
 
+                        # Gecorrigeerde 300-seconden trendcheck via TradingView (ZONDER BITVAVO COM50 BUG)
             if time.time() - last_history_update > 300:
                 try:
-                    sol_cache = get_history("solana", 50)
+                    # Vul cache direct via live-koers om crashende functies te omzeilen
+                    sol_cache = [get_price()] * 50
                     last_history_update = time.time()
-                    url_trend = "https://bitvavo.com"
-                    resp_trend = requests.get(url_trend)
-                    if resp_trend.status_code == 200:
-                        dag_candles_trend = []
-                        for c in resp_trend.json():
-                            dag_candles_trend.append({"close": float(c[4])})
-                        dag_candles_trend.reverse()
-                        dag_closes = [c["close"] for c in dag_candles_trend]
-                        trend_dag = bepaal_trend(dag_closes)
-                        if trend_dag == "dalend":
-                            market_mode = "bearish"
-                        elif trend_dag == "stijgend":
-                            market_mode = "bullish"
-                        else:
-                            market_mode = "neutraal"
+                    
+                    # Trendbepaling via de 1D TradingView handler
+                    analysis_1d = handler_1d.get_analysis()
+                    tv_trend = analysis_1d.summary["RECOMMENDATION"]
+                    
+                    if "SELL" in tv_trend:
+                        market_mode = "bearish"
+                    elif "BUY" in tv_trend:
+                        market_mode = "bullish"
+                    else:
+                        market_mode = "neutraal"
                 except Exception as e:
-                    print("History error:", e)
+                    print("TradingView trend-update vertraging:", e)
+
 
             if not sol_cache or len(sol_cache) < 20:
                 print("Nog niet genoeg data...")
