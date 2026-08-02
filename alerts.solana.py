@@ -368,6 +368,9 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 # =============================
 # MAIN (MET DIRECTE INDEX CORRECTIE)
 # =============================
+# =============================
+# MAIN (MET DE JUISTE COIN-LINK)
+# =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
     global sol_cache, last_history_update, market_mode
@@ -377,6 +380,7 @@ def main():
 
     print("⏳ Cache direct vullen bij opstarten...")
     try:
+        # Dit MOET de api.bitvavo link zijn, anders crasht de datafeed!
         url_init = "https://bitvavo.com"
         resp_init = requests.get(url_init)
         if resp_init.status_code == 200:
@@ -389,6 +393,7 @@ def main():
         print(f"❌ Forceer-check mislukt: {e}")
 
     send("🤖 Bot live 🚀 — Swing & Price Action actief")
+
 
 
     while True:
