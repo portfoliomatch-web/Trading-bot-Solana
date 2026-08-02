@@ -384,14 +384,19 @@ def main():
             sol_price = get_price()
 
             # Veiligere geschiedenis check om 429 crashes te voorkomen
+                        # Veiligere geschiedenis check om 429 crashes te voorkomen (100% URL FIX)
             if time.time() - last_history_update > 300:
                 try:
-                    sol_cache = get_history("solana", 50)
-                    last_history_update = time.time()
+                    # We roepen de API hier direct aan zonder tussenkomst van get_history
+                    url_geschiedenis = "https://bitvavo.com"
+                    resp_geschiedenis = requests.get(url_geschiedenis)
+                    if resp_geschiedenis.status_code == 200:
+                        sol_cache = [float(candle[4]) for candle in resp_geschiedenis.json()]
+                        sol_cache.reverse()
+                        last_history_update = time.time()
 
                     url_trend = "https://bitvavo.com"
                     resp_trend = requests.get(url_trend)
-                    
                     if resp_trend.status_code == 200:
                         dag_candles_trend = []
                         for c in resp_trend.json():
@@ -407,6 +412,8 @@ def main():
                             market_mode = "neutraal"
                 except Exception as e:
                     print("Tijdelijke Bitvavo-vertraging (cache wordt behouden):", e)
+
+            
 
             if not sol_cache or len(sol_cache) < 20:
                 print("Wachten op herstel van datafeed...")
