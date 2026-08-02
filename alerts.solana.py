@@ -494,7 +494,7 @@ def main():
                         f"Doji Dag: {'⚠️ Ja' if is_doji_day else '❌ Nee'}\n"
                         f"=========================\n"
                         f"🔗 Live Grafiek & Analyse:\n"
-                        f"https://tradingview.com\n"
+                        f"https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=BINANCE&interval=2h\n"
                         f"========================="
                     )
                     
