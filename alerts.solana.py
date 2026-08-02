@@ -360,7 +360,7 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 
 
 # =============================
-# MAIN EXECUTIE LOOP (DEFINITIEVE URL FIX)
+# MAIN (VEILIGE REFRESH)
 # =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
@@ -375,89 +375,80 @@ def main():
         try:
             now = datetime.now()
 
-            if now.hour == 0 and now.minute == 1:
-                if last_analysis_day != now.day:
-                    analysis = analyse_market()
-                    send(analysis)
-                    last_analysis_day = now.day
+            if now.hour == 0 and now.minute == 1 and last_analysis_day != now.day:
+                analysis = analyse_market()
+                send(analysis)
+                last_analysis_day = now.day
 
             messages = check_messages()
             sol_price = get_price()
 
+            # Veiligere geschiedenis check om 429 crashes te voorkomen
             if time.time() - last_history_update > 300:
                 try:
-                    # RECHTSTREEKSE SCHONE API-AANROEP OM DE COIN50-BUG HIER VOLLEDIG TE OVERSCHRIJVEN
-                    url_clean = "https://bitvavo.com"
-                    resp_clean = requests.get(url_clean)
-                    sol_cache = [float(candle[4]) for candle in resp_clean.json()]
-                    sol_cache.reverse()
-                    
+                    sol_cache = get_history("solana", 50)
                     last_history_update = time.time()
+
                     url_trend = "https://bitvavo.com"
                     resp_trend = requests.get(url_trend)
-                    dag_candles_trend = []
-                    for c in resp_trend.json():
-                        dag_candles_trend.append({"close": float(c[4])})
-                    dag_candles_trend.reverse()
-                    dag_closes = [c["close"] for c in dag_candles_trend]
-                    trend_dag = bepaal_trend(dag_closes)
-                    if trend_dag == "dalend":
-                        market_mode = "bearish"
-                    elif trend_dag == "stijgend":
-                        market_mode = "bullish"
-                    else:
-                        market_mode = "neutraal"
+                    
+                    if resp_trend.status_code == 200:
+                        dag_candles_trend = []
+                        for c in resp_trend.json():
+                            dag_candles_trend.append({"close": float(c[4])})
+                        dag_candles_trend.reverse()
+                        dag_closes = [c["close"] for c in dag_candles_trend]
+                        trend_dag = bepaal_trend(dag_closes)
+                        if trend_dag == "dalend":
+                            market_mode = "bearish"
+                        elif trend_dag == "stijgend":
+                            market_mode = "bullish"
+                        else:
+                            market_mode = "neutraal"
                 except Exception as e:
-                    print("History error:", e)
+                    print("Tijdelijke Bitvavo-vertraging (cache wordt behouden):", e)
 
             if not sol_cache or len(sol_cache) < 20:
-                print("Nog niet genoeg data in cache...")
-                # Noodgreep om direct data te forceren bij herstart
-                try:
-                    url_clean = "https://bitvavo.com"
-                    sol_cache = [float(candle[4]) for candle in requests.get(url_clean).json()]
-                    sol_cache.reverse()
-                except:
-                    pass
-                time.sleep(15)
+                print("Wachten op herstel van datafeed...")
+                time.sleep(30) # Geef de API meer rust bij een blokkade
                 continue
 
-                        # ==========================================================
+            # ==========================================================
             # ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
             # ==========================================================
             if trading_active:
                 candles = get_candles()
-                signal = scan_market_structure(now, candles, candles, candles)
-                eur, sol = get_balances()
+                if candles:
+                    signal = scan_market_structure(now, candles, candles, candles)
+                    eur, sol = get_balances()
 
-                if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
-                    trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
-                    send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
-                    buy_all()
-                    highest_price = sol_price
-                    sol = 1  
-
-                elif sol > 0 and last_buy_price is not None:
-                    if sol_price > highest_price:
+                    if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
+                        trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
+                        send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
+                        buy_all()
                         highest_price = sol_price
+                        sol = 1  
 
-                    if sol_price >= fvg_target_price:
-                        send(f"🎯 WINSDOEL BEREIKT (1:2 Ratio) — Target €{fvg_target_price:.2f} geraakt!")
-                        sell_all("(Take Profit)")
-                        highest_price = 0
-                        
-                    elif sol_price <= fvg_stop_loss:
-                        send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
-                        sell_all("(Stop Loss)")
-                        highest_price = 0
-                        
-                    elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
-                        active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
-                        if sol_price <= active_trailing_level:
-                            send(f"🚀 TRAILING STOP LOSS GETRIGGERD — Winst veiliggesteld op €{sol_price:.2f}")
-                            sell_all("(Trailing Winstrust)")
+                    elif sol > 0 and last_buy_price is not None:
+                        if sol_price > highest_price:
+                            highest_price = sol_price
+
+                        if sol_price >= fvg_target_price:
+                            send(f"🎯 WINSDOEL BEREIKT (1:2 Ratio) — Target €{fvg_target_price:.2f} geraakt!")
+                            sell_all("(Take Profit)")
                             highest_price = 0
-
+                            
+                        elif sol_price <= fvg_stop_loss:
+                            send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
+                            sell_all("(Stop Loss)")
+                            highest_price = 0
+                            
+                        elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
+                            active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
+                            if sol_price <= active_trailing_level:
+                                send(f"🚀 TRAILING STOP LOSS GETRIGGERD — Winst veiliggesteld op €{sol_price:.2f}")
+                                sell_all("(Trailing Winstrust)")
+                                highest_price = 0
 
             # =============================
             # TELEGRAM COMMANDS
@@ -465,7 +456,7 @@ def main():
             for msg in messages:
                 if "/analyse" in msg:
                     send(analyse_market())
-                                
+                    
                 elif "/update" in msg:
                     eur, sol = get_balances()
                     totaal = eur + (sol * sol_price)
@@ -478,11 +469,9 @@ def main():
                         f"Doji Dag: {'⚠️ Ja' if is_doji_day else '❌ Nee'}\n"
                         f"=========================\n"
                         f"🔗 Live Grafiek & Analyse:\n"
-                        f"https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=BINANCE&interval=2h\n"
+                        f"https://tradingview.com\n"
                         f"========================="
                     )
-  
-                
                     
                 elif "/pauzeon" in msg:
                     trading_active = False
@@ -511,9 +500,10 @@ def main():
                     send("🔄 Reset gedaan — bot staat op SELL")
 
         except Exception as e:
-            print("Fout:", e)
+            print("Fout in hoofdloop:", e)
 
-        time.sleep(15)
+        time.sleep(20) # Verhoogd naar 20 seconden om de server ademruimte te geven
 
 if __name__ == "__main__":
     main()
+
