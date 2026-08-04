@@ -349,7 +349,7 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 
 
 # =============================
-# MAIN EXECUTIE LOOP (100% RECHTE INSPRINGING)
+# MAIN EXECUTIE LOOP (REALTIME-SCANNING ZONDER 429 PAUZES)
 # =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
@@ -358,64 +358,45 @@ def main():
     global highest_price  
     global opening_high, opening_low, range_is_set, is_doji_day, fvg_target_price, fvg_stop_loss, last_checked_day
 
-    print("🚀 TradingView data-feed succesvol gekoppeld!")
-    
-    try:
-        sol_cache = [get_price()] * 50
-        last_history_update = time.time()
-        print("✅ Interne cache succesvol klaargezet via live-koers!")
-    except Exception as e:
-        print(f"⚠️ Start-waarschuwing: {e}")
-
-    send("🤖 Bot live 🚀 — Swing & Price Action actief via TradingView")
+    print("🚀 Realtime Price Action scanner geactiveerd!")
+    send("🤖 Bot live 🚀 — Continu scanning actief (0 seconden vertraging)")
 
     while True:
         try:
             now = datetime.now()
+            sol_price = get_price()  # Leest direct gratis en zonder limiet de Bitvavo ticker
 
+            # Dagelijkse analyse (Eénmalig om 01:01)
             if now.hour == 0 and now.minute == 1 and last_analysis_day != now.day:
                 analysis = analyse_market()
                 send(analysis)
                 last_analysis_day = now.day
 
             messages = check_messages()
-            sol_price = get_price()
 
-                        # Gecorrigeerde 300-seconden trendcheck via TradingView (ZONDER BITVAVO COM50 BUG)
-            if time.time() - last_history_update > 300:
+            # Alleen gerichte TradingView-updates om de 10 minuten voor de trend (Geen 429 meer!)
+            if time.time() - last_history_update > 600:
                 try:
-                    # Vul cache direct via live-koers om crashende functies te omzeilen
-                    sol_cache = [get_price()] * 50
-                    last_history_update = time.time()
-                    
-                    # Trendbepaling via de 1D TradingView handler
                     analysis_1d = handler_1d.get_analysis()
                     tv_trend = analysis_1d.summary["RECOMMENDATION"]
-                    
-                    if "SELL" in tv_trend:
-                        market_mode = "bearish"
-                    elif "BUY" in tv_trend:
-                        market_mode = "bullish"
-                    else:
-                        market_mode = "neutraal"
-                except Exception as e:
-                    print("TradingView trend-update vertraging:", e)
-
-
-            if not sol_cache or len(sol_cache) < 20:
-                print("Nog niet genoeg data...")
-                time.sleep(15)
-                continue
+                    market_mode = "bullish" if "BUY" in tv_trend else "bearish" if "SELL" in tv_trend else "neutraal"
+                    last_history_update = time.time()
+                except:
+                    pass
 
             # ==========================================================
-            # ⚡ CORE EXECUTION LOOP: INKOPEN & INGEBOUWDE SWING EXITS
+            # ⚡ CORE REALTIME SCANNER (DRAAIT NU VOLGASS ELKE SECONDE)
             # ==========================================================
             if trading_active:
-                candles_m1 = get_tv_candles_m1()
-                candles_m5 = get_tv_candles_m5()
-                candles_daily = get_tv_candles_daily()
-                
-                signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
+                # Haal alleen kaarsen op rond het cruciale uitbraak-tijdstip (09:30 - 10:00)
+                if now.hour == 9 and 30 <= now.minute <= 59:
+                    candles_m1 = get_tv_candles_m1()
+                    candles_m5 = get_tv_candles_m5()
+                    candles_daily = get_tv_candles_daily()
+                    signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
+                else:
+                    signal = "WAITING"
+
                 eur, sol = get_balances()
 
                 # --- AUTOMATISCH INKOPEN ---
@@ -431,19 +412,16 @@ def main():
                     if sol_price > highest_price:
                         highest_price = sol_price
 
-                    # Check A: Winsttarget (1:2 Ratio)
                     if sol_price >= fvg_target_price:
-                        send(f"🎯 WINSDOEL BEREIKT (1:2 Ratio) — Target €{fvg_target_price:.2f} geraakt!")
+                        send(f"🎯 WINSDOEL BEREIKT — Target €{fvg_target_price:.2f} geraakt!")
                         sell_all("(Take Profit)")
                         highest_price = 0
                         
-                    # Check B: Harde FVG Bodembeveiliging
                     elif sol_price <= fvg_stop_loss:
                         send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
                         sell_all("(Stop Loss)")
                         highest_price = 0
                         
-                    # Check C: Dynamische Trailing Winstrust
                     elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
                         active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
                         if sol_price <= active_trailing_level:
@@ -462,48 +440,35 @@ def main():
                     eur, sol = get_balances()
                     totaal = eur + (sol * sol_price)
                     status = "BUY" if sol > 0 else "SELL"
-                    send(
-                        f"📊 Swing Update\n"
-                        f"Koers: €{sol_price:.2f}\n"
-                        f"Status: {status}\n"
-                        f"Saldo: €{totaal:.2f}\n"
-                        f"Doji Dag: {'⚠️ Ja' if is_doji_day else '❌ Nee'}\n"
-                        f"=========================\n"
-                        f"🔗 Live Grafiek & Analyse:\n"
-                        f"https://www.tradingview.com/symbols/SOLEUR/technicals/?exchange=BINANCE&interval=2h\n"
-                        f"========================="
-                    )
+                    send(f"📊 Realtime Update\nKoers: €{sol_price:.2f}\nStatus: {status}\nSaldo: €{totaal:.2f}\nDoji Dag: {'⚠️ Ja' if is_doji_day else '❌ Nee'}")
                     
                 elif "/pauzeon" in msg:
                     trading_active = False
-                    send("⏸️ Bot gepauzeerd — geen trades")
+                    send("⏸️ Bot gepauzeerd")
                     
                 elif "/pauzeoff" in msg:
                     trading_active = True
-                    send("▶️ Bot actief — trades hervat")
+                    send("▶️ Bot actief")
                     
                 elif "/sell" in msg:
                     if sol > 0.01:
-                         send("⏳ Handmatige verkoop gestart op Bitvavo...")
                          sell_all("(Handmatig via Telegram)")
                          highest_price = 0  
-                         send("✅ Alle Solana succesvol verkocht.")
                     else:
-                         send("❌ Actie geweigerd: Je bezit geen Solana.")
+                         send("❌ Geen Solana in bezit.")
                          
                 elif "/buy" in msg:
                     buy_all()
-                    send("🟢 Handmatige BUY uitgevoerd")
                     
                 elif "/reset" in msg:
                     last_buy_price = None
                     highest_price = 0
-                    send("🔄 Reset gedaan — bot staat op SELL")
+                    send("🔄 Reset voltooid")
 
         except Exception as e:
-            print("Fout in hoofdloop:", e)
+            print("Fout in realtime loop:", e)
 
-        time.sleep(120)
+        time.sleep(1) # Scant nu direct elke seconde zonder vertraging!
 
 if __name__ == "__main__":
     main()
