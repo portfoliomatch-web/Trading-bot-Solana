@@ -316,11 +316,16 @@ def sell_all(reden=""):
         last_buy_price = None
 
 # ==========================================================
-# 🔍 STRATEGIE SENSORS: DOJI, OPENING RANGE & FVG DETECTIE (NIEUW)
+# 🔍 STRATEGIE SENSORS: SMC BREAK OF STRUCTURE & RETRACEMENT FIX (NIEUW)
 # ==========================================================
 def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
     global opening_high, opening_low, range_is_set, is_doji_day
     global fvg_target_price, fvg_stop_loss, last_checked_day
+    
+    if 'bos_triggered' not in globals():
+        global bos_triggered, bos_high_target
+        bos_triggered = False
+        bos_high_target = 0
 
     if now.hour == 0 and now.minute == 1 and last_checked_day != now.day:
         last_checked_day = now.day
@@ -330,6 +335,7 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
             body_grootte = abs(yesterday["close"] - yesterday["open"])
             is_doji_day = (body_grootte / totale_range) <= 0.10 if totale_range > 0 else False
             range_is_set = False  
+            bos_triggered = False  
 
     if now.hour == 9 and now.minute == 35 and not range_is_set:
         if len(candles_m5) > 0:
@@ -337,19 +343,39 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
             opening_high = first_candle["high"]
             opening_low = first_candle["low"]
             range_is_set = True
+            bos_triggered = False
 
-    if range_is_set and len(candles_m1) >= 3:
-        c1, c2, c3 = candles_m1[-3], candles_m1[-2], candles_m1[-1]
-        if c3["close"] > opening_high and c3["low"] > c1["high"]:
-            risk = c3["close"] - c1["high"]
-            fvg_stop_loss = c1["high"]  
-            fvg_target_price = c3["close"] + (risk * RISK_REWARD_RATIO)  
-            return "BUY_SIGNAL"
+    if range_is_set and len(candles_m1) >= 2:
+        current_candle = candles_m1[-1]
+        live_price = current_candle["close"]
+
+        if not bos_triggered:
+            if current_candle["close"] > opening_high and current_candle["open"] < opening_high:
+                bos_triggered = True
+                bos_high_target = current_candle["high"]
+                print(f"🔥 Real Break of Structure (BOS) gedetecteerd op €{live_price:.2f}! Wachten op retracement...")
+        
+        elif bos_triggered:
+            if live_price <= opening_high * 1.002 and live_price >= opening_low:
+                risk = bos_high_target - opening_high
+                if risk <= 0:
+                    risk = live_price * 0.015 
+
+                fvg_stop_loss = opening_high - (risk * 0.5) 
+                fvg_target_price = live_price + (risk * RISK_REWARD_RATIO) 
+                bos_triggered = False 
+                return "BUY_SIGNAL"
+
+            elif live_price < opening_low:
+                bos_triggered = False
+                print("❌ BOS ongeldig verklaard: prijs zakte door de bodem.")
+
     return "WAITING"
 
 
+
 # =============================
-# MAIN EXECUTIE LOOP (REALTIME-SCANNING ZONDER 429 PAUZES)
+# MAIN EXECUTIE LOOP (REALTIME-SCANNING EN SMC COMPATIBLE)
 # =============================
 def main():
     global trading_active, last_buy_price, last_analysis_day
@@ -364,9 +390,8 @@ def main():
     while True:
         try:
             now = datetime.now()
-            sol_price = get_price()  # Leest direct gratis en zonder limiet de Bitvavo ticker
+            sol_price = get_price()  
 
-            # Dagelijkse analyse (Eénmalig om 01:01)
             if now.hour == 0 and now.minute == 1 and last_analysis_day != now.day:
                 analysis = analyse_market()
                 send(analysis)
@@ -374,7 +399,6 @@ def main():
 
             messages = check_messages()
 
-            # Alleen gerichte TradingView-updates om de 10 minuten voor de trend (Geen 429 meer!)
             if time.time() - last_history_update > 600:
                 try:
                     analysis_1d = handler_1d.get_analysis()
@@ -385,10 +409,9 @@ def main():
                     pass
 
             # ==========================================================
-            # ⚡ CORE REALTIME SCANNER (DRAAIT NU VOLGASS ELKE SECONDE)
+            # ⚡ KERNLOOP: REALTIME DOORSTUREN VAN DE RECHTE TV KANDLES
             # ==========================================================
             if trading_active:
-                # Haal alleen kaarsen op rond het cruciale uitbraak-tijdstip (09:30 - 10:00)
                 if now.hour == 9 and 30 <= now.minute <= 59:
                     candles_m1 = get_tv_candles_m1()
                     candles_m5 = get_tv_candles_m5()
@@ -468,7 +491,8 @@ def main():
         except Exception as e:
             print("Fout in realtime loop:", e)
 
-        time.sleep(1) # Scant nu direct elke seconde zonder vertraging!
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()
+
