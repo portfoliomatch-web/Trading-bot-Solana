@@ -4,3 +4,4 @@ pycoingecko
 tradingview_ta
 fastapi
 uvicorn
+flask
