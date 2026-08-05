@@ -2,3 +2,5 @@ requests
 python-dotenv
 pycoingecko
 tradingview_ta
+fastapi
+uvicorn
