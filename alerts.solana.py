@@ -245,35 +245,35 @@ def bepaal_trend(prices):
         return "neutraal"
 
 # =============================
-# ANALYSE
+# ANALYSE (VOLLEDIG GEZUIVERD VAN BITVAVO COM7 BUG)
 # =============================
 def analyse_market():
     global market_mode
-    sol_prices_7  = get_history("solana", 7)
-    sol_prices_20 = get_history("solana", 20)
-    price = sol_prices_7[-1]
-    change_7d  = ((price - sol_prices_7[0])  / sol_prices_7[0])  * 100
-    change_20d = ((price - sol_prices_20[0]) / sol_prices_20[0]) * 100
-    trend_7d  = bepaal_trend(sol_prices_7)
-    trend_20d = bepaal_trend(sol_prices_20)
-    rsi = bereken_rsi(sol_prices_7)
-    if trend_20d == "dalend":
-        market_mode = "bearish"
-    elif trend_20d == "stijgend":
-        market_mode = "bullish"
-    else:
-        market_mode = "neutraal"
-    bericht = (
-        f"📊 Daganalyse Solana\n\n"
-        f"Koers: €{price:.2f}\n"
-        f"7 dagen: {change_7d:.2f}%\n"
-        f"20 dagen: {change_20d:.2f}%\n\n"
-        f"Trend 7d:  {trend_7d}\n"
-        f"Trend 20d: {trend_20d}\n"
-        f"RSI (14):  {rsi:.1f}\n\n"
-        f"Market mode: {market_mode}\n"
-    )
-    return bericht
+    try:
+        # Haal de live-koers op
+        price = get_price()
+        
+        # Vraag direct aan de daggrafiek handler wat de status is
+        analysis_1d = handler_1d.get_analysis()
+        tv_trend = analysis_1d.summary["RECOMMENDATION"]
+        
+        if "SELL" in tv_trend:
+            market_mode = "bearish"
+        elif "BUY" in tv_trend:
+            market_mode = "bullish"
+        else:
+            market_mode = "neutraal"
+            
+        bericht = (
+            f"📊 Daganalyse Solana (via TradingView)\n\n"
+            f"Koers: €{price:.2f}\n"
+            f"Trend daggrafiek: {tv_trend}\n"
+            f"Market mode: {market_mode}\n"
+        )
+        return bericht
+    except Exception as e:
+        return f"📊 Daganalyse Solana\nKoers: €{get_price():.2f}\nMarket mode: {market_mode}\n(Trend-feed tijdelijk vertraagd: {e})"
+
 
 # =============================
 # BUY & SELL AUTOMATION (UNTOUCHED)
