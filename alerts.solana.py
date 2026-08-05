@@ -1,35 +1,13 @@
-import os
 import requests
 import time
+import os
 import hmac
 import hashlib
 import json
-from datetime import datetime 
 from dotenv import load_dotenv
-from flask import Flask
-import threading
-
-# =============================
-# FLASK WEBSERVER (Bovenaan gecorrigeerd)
-# =============================
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "Bot is online!"
-
-def run_webserver():
-    try:
-        port = int(os.environ.get('PORT', 8080))
-        app.run(host='0.0.0.0', port=port)
-    except Exception as e:
-        print("Flask startfout:", e)
-
-# Start de webserver direct in de achtergrond
-threading.Thread(target=run_webserver, daemon=True).start()
+from datetime import datetime 
 
 load_dotenv()
-
 
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
@@ -517,4 +495,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
