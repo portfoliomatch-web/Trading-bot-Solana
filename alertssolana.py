@@ -1,6 +1,17 @@
+import os
+import requests
+import time
+import hmac
+import hashlib
+import json
+from datetime import datetime 
+from dotenv import load_dotenv
 from flask import Flask
 import threading
 
+# =============================
+# FLASK WEBSERVER (Bovenaan gecorrigeerd)
+# =============================
 app = Flask('')
 
 @app.route('/')
@@ -8,23 +19,17 @@ def home():
     return "Bot is online!"
 
 def run_webserver():
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    try:
+        port = int(os.environ.get('PORT', 8080))
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        print("Flask startfout:", e)
 
-# Dit zorgt dat de webserver start in de achtergrond
-threading.Thread(target=run_webserver).start()
-
-# --- HIERONDER BEGINT JOUW EIGEN CODE ---
-
-import requests
-import time
-import os
-import hmac
-import hashlib
-import json
-from dotenv import load_dotenv
-from datetime import datetime 
+# Start de webserver direct in de achtergrond
+threading.Thread(target=run_webserver, daemon=True).start()
 
 load_dotenv()
+
 
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
