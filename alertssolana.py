@@ -1,3 +1,20 @@
+from flask import Flask
+import threading
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is online!"
+
+def run_webserver():
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+
+# Dit zorgt dat de webserver start in de achtergrond
+threading.Thread(target=run_webserver).start()
+
+# --- HIERONDER BEGINT JOUW EIGEN CODE ---
+
 import requests
 import time
 import os
