@@ -403,10 +403,21 @@ def main():
     print("🚀 Realtime Price Action scanner geactiveerd!")
     send("🤖 Bot live 🚀 — Continu scanning actief (0 seconden vertraging)")
 
+    # Onthoudt wanneer er voor het laatst naar het Render-dashboard is geprint
+    laatste_log_tijd = 0
+
     while True:
         try:
             now = datetime.now()
             sol_price = get_price()  
+
+            # =======================================================
+            # RENDER LIVE STATUS LOG (ELKE 60 SECONDEN)
+            # =======================================================
+            if time.time() - laatste_log_tijd > 60:
+                print(f"⏰ [{now.strftime('%H:%M:%S')}] Bot scant actief. Live SOL koers: €{sol_price} | Modus: {market_mode}")
+                laatste_log_tijd = time.time()
+            # =======================================================
 
             if now.hour == 0 and now.minute == 1 and last_analysis_day != now.day:
                 analysis = analyse_market()
