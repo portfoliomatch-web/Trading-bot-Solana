@@ -509,5 +509,30 @@ def main():
 
         time.sleep(1)
 
+# =======================================================
+# RENDER WEB SERVER & BACKROUND THREAD COUPLING
+# =======================================================
+import threading
+from flask import Flask
+
+# 1. Maak de minimale Flask webserver aan voor Render
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is online en actief!"
+
+# 2. Start de webserver en je bestaande main() gelijktijdig
 if __name__ == "__main__":
-    main()
+    print("Systeem start op...")
+    
+    # We starten jouw bestaande main() functie in een achtergrond-thread
+    bot_thread = threading.Thread(target=main)
+    bot_thread.daemon = True
+    bot_thread.start()
+    print("Trading bot (main) succesvol naar de achtergrond verplaatst.")
+    
+    # Start de webserver op de poort die Render vereist
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
