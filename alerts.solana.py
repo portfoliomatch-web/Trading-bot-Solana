@@ -209,11 +209,27 @@ def bitvavo_request(method, endpoint, body=None):
         r = requests.post(url, headers=headers, json=body)
     return r.json()
 
+# =============================
+# VEILIGE LIVE KOERS (MET TRADINGVIEW FALLBACK)
+# =============================
 def get_price():
-    response = bitvavo_request("GET", "/v2/ticker/price?market=SOL-EUR")
-    if "price" in response:
-        return float(response["price"])
-    raise Exception(f"Price not found in response: {response}")
+    try:
+        response = bitvavo_request("GET", "/v2/ticker/price?market=SOL-EUR")
+        # Controleer of het antwoord een geldige tabel/dictionary is en de prijs bevat
+        if isinstance(response, dict) and "price" in response:
+            return float(response["price"])
+        
+        # Als Bitvavo tekst of een error teruggeeft, pakken we live de TradingView prijs
+        analysis = handler_1m.get_analysis()
+        return float(analysis.indicators["close"])
+    except Exception as e:
+        try:
+            # Secundaire back-up via de 1-minuut handler
+            analysis = handler_1m.get_analysis()
+            return float(analysis.indicators["close"])
+        except:
+            print(f"⚠️ Prijsfeed volledig onderbroken, fallback naar €64.00")
+            return 64.00  # Ultieme nood-fallback om crashes te voorkomen
 
 def get_history(coin, days):
     url = f"https://bitvavo.com{days}"
