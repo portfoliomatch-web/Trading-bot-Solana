@@ -438,16 +438,18 @@ def main():
             # ==========================================================
             # ⚡ KERNLOOP: REALTIME DOORSTUREN VAN DE RECHTE TV KANDLES
             # ==========================================================
+                        # ==========================================================
+            # ⚡ KERNLOOP: REALTIME DOORSTUREN VAN DE RECHTE TV KANDLES
+            # ==========================================================
             if trading_active:
-                if now.hour == 9 and 30 <= now.minute <= 59:
-                    candles_m1 = get_tv_candles_m1()
-                    candles_m5 = get_tv_candles_m5()
-                    candles_daily = get_tv_candles_daily()
-                    signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
-                else:
-                    signal = "WAITING"
+                # 24/7 scanning geactiveerd (tijdrestrictie verwijderd)
+                candles_m1 = get_tv_candles_m1()
+                candles_m5 = get_tv_candles_m5()
+                candles_daily = get_tv_candles_daily()
+                signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
 
                 eur, sol = get_balances()
+
 
                 # --- AUTOMATISCH INKOPEN ---
                 if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
