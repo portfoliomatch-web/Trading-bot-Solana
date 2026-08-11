@@ -91,11 +91,11 @@ def ema(prices, period):
 # =============================
 from tradingview_ta import TA_Handler, Interval
 
-handler_1d = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_1_DAY)
-handler_5m = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_5_MINUTES)
-handler_1m = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_1_MINUTE)
-handler_2h = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_2_HOURS)
-handler_4h = TA_Handler(symbol="SOLUSDT", exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_4_HOURS)
+handler_1d = TA_Handler(symbol="SOLEUR", exchange="COINBASE", screener="crypto", interval=Interval.INTERVAL_1_DAY)
+handler_5m = TA_Handler(symbol="SOLEUR", exchange="COINBASE", screener="crypto", interval=Interval.INTERVAL_5_MINUTES)
+handler_1m = TA_Handler(symbol="SOLEUR", exchange="COINBASE", screener="crypto", interval=Interval.INTERVAL_1_MINUTE)
+handler_2h = TA_Handler(symbol="SOLEUR", exchange="COINBASE", screener="crypto", interval=Interval.INTERVAL_2_HOURS)
+handler_4h = TA_Handler(symbol="SOLEUR", exchange="COINBASE", screener="crypto", interval=Interval.INTERVAL_4_HOURS)
 
 def get_tv_candles_m1():
     try:
