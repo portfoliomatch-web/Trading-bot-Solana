@@ -231,13 +231,19 @@ def get_price():
             print(f"⚠️ Prijsfeed volledig onderbroken, fallback naar €64.00")
             return 64.00  # Ultieme nood-fallback om crashes te voorkomen
 
-def get_history(coin, days):
-    url = f"https://bitvavo.com{days}"
-    response = requests.get(url)
-    data = response.json()
-    prices = [float(candle[4]) for candle in data]
-    prices.reverse()
-    return prices
+def get_history(coin="SOL-EUR", interval="1d", limit=14):
+    try:
+        response = bitvavo_request("GET", f"/v2/markets/{coin}/candles?interval={interval}&limit={limit}")
+        if isinstance(response, list):
+            prices = [float(candle[4]) for candle in response]
+            prices.reverse()
+            return prices
+    except Exception as e:
+        print(f"Fout bij ophalen historie via Bitvavo: {e}")
+    
+    p = get_price()
+    return [p] * limit
+
 
 # =============================
 # BALANCE
