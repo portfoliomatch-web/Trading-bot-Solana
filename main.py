@@ -127,14 +127,15 @@ def get_tv_candles_daily():
 
 def get_tv_analyse(interval_string):
     try:
+        time.sleep(2) # Altijd 2 seconden rust inbouwen tegen 429 errors
         if interval_string == "4h":
-            time.sleep(2) 
             analyse = handler_4h.get_analysis()
         else:
             analyse = handler_2h.get_analysis()
         return analyse.summary["BUY"], analyse.summary["SELL"], analyse.summary["NEUTRAL"], analyse.oscillators["RECOMMENDATION"]
     except:
         return 0, 0, 0, "NEUTRAL"
+
 
 # =============================
 # SWING SIGNAAL (100% TRADINGVIEW POWERED)
@@ -272,10 +273,8 @@ def bepaal_trend(prices):
 def analyse_market():
     global market_mode
     try:
-        # Haal de live-koers op
         price = get_price()
-        
-        # Vraag direct aan de daggrafiek handler wat de status is
+        time.sleep(2) # Rustpauze voor de API
         analysis_1d = handler_1d.get_analysis()
         tv_trend = analysis_1d.summary["RECOMMENDATION"]
         
@@ -294,7 +293,9 @@ def analyse_market():
         )
         return bericht
     except Exception as e:
-        return f"📊 Daganalyse Solana\nKoers: €{get_price():.2f}\nMarket mode: {market_mode}\n(Trend-feed tijdelijk vertraagd: {e})"
+        # Als TradingView even blokkeert (429), behouden we de laatste bekende market_mode
+        return f"📊 Daganalyse Solana\nKoers: €{get_price():.2f}\nMarket mode: {market_mode}\n(Trend-feed tijdelijk in de ruststand door rate-limit)"
+
 
 
 # =============================
