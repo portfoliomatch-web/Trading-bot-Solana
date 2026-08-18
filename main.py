@@ -531,8 +531,8 @@ def main():
 
           
 
-                # --- DYNAMISCH WINSTBEHEER & EXITS ---
-                elif sol > 0 and last_buy_price is not None:
+                                # --- DYNAMISCH WINSTBEHEER & EXITS (Alleen als target actief is) ---
+                elif sol > 0 and last_buy_price is not None and fvg_target_price > 0:
                     if sol_price > highest_price:
                         highest_price = sol_price
 
@@ -540,11 +540,13 @@ def main():
                         send(f"🎯 WINSDOEL BEREIKT — Target €{fvg_target_price:.2f} geraakt!")
                         sell_all("(Take Profit)")
                         highest_price = 0
+                        fvg_target_price = 0  # Reset target na verkoop
                         
-                    elif sol_price <= fvg_stop_loss:
+                    elif sol_price <= fvg_stop_loss and fvg_stop_loss > 0:
                         send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
                         sell_all("(Stop Loss)")
                         highest_price = 0
+                        fvg_stop_loss = 0     # Reset stop loss na verkoop
                         
                     elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
                         active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
@@ -552,6 +554,7 @@ def main():
                             send(f"🚀 TRAILING STOP LOSS GETRIGGERD — Winst veiliggesteld op €{sol_price:.2f}")
                             sell_all("(Trailing Winstrust)")
                             highest_price = 0
+
 
             # =============================
             # TELEGRAM COMMANDS
