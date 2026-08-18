@@ -395,6 +395,55 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 
     return "WAITING"
 
+# ==========================================================
+# == MODULE 1: HULL SUITE / TREND CHECK (LOSSE FUNCTIE)
+# ==========================================================
+def check_hull_suite():
+    # Hier kun je jouw trend-logica of TradingView-check opnemen
+    # Geeft True terug als het signaal positief/groen is, anders False
+    hull_condition_met = True  # Voorbeeld
+    
+    if hull_condition_met:
+        print("[#== STRATEGY: HULL_SUITE ==] Signaal: BUY (Trend is groen)")
+        return True
+    return False
+
+
+# ==========================================================
+# == MODULE 2: DOJI PATTERN CHECK (LOSSE FUNCTIE)
+# ==========================================================
+def check_doji_pattern():
+    # Hier controleer je het doji-patroon onafhankelijk
+    doji_condition_met = False  # Voorbeeld
+    
+    if doji_condition_met:
+        print("[#== STRATEGY: DOJI_PATTERN ==] Signaal: BUY (Doji gedetecteerd)")
+        return True
+    return False
+
+
+# ==========================================================
+# == MODULE 3: FVG / ZONE CHECK (LOSSE FUNCTIE)
+# ==========================================================
+def check_fvg_zone():
+    # Hier controleer je de FVG/SMC zone onafhankelijk
+    fvg_condition_met = False  # Voorbeeld
+    
+    if fvg_condition_met:
+        print("[#== STRATEGY: FVG_ZONE ==] Signaal: BUY (Zone geraakt)")
+        return True
+    return False
+
+
+# ==========================================================
+# == UITVOEREN VAN DE BUY ORDER MET BRON-LOGGING
+# ==========================================================
+def execute_buy_order(trigger_source):
+    print("==================================================")
+    print(f"🟢 BUY ORDER GEPLAATST OP BITVAVO!")
+    print(f"📌 Getriggerd door module [#== {trigger_source} ==]")
+    print("==================================================")
+    buy_all() # Roept je bestaande Bitvavo koop-functie aan
 
 
 # =============================
@@ -443,28 +492,64 @@ def main():
                     pass
 
             # ==========================================================
+            # ==========================================================
             # ⚡ KERNLOOP: REALTIME DOORSTUREN VAN DE RECHTE TV KANDLES
             # ==========================================================
-                        # ==========================================================
-            # ⚡ KERNLOOP: REALTIME DOORSTUREN VAN DE RECHTE TV KANDLES
+            # ==========================================================
+            # == HOOFD-LOOP: MODULAIR SCANNEN & AUTOMATISCH KOPEN ==
             # ==========================================================
             if trading_active:
-                # 24/7 scanning geactiveerd (tijdrestrictie verwijderd)
+                # Roep de losse modules onafhankelijk van elkaar aan
+                hull_buy = check_hull_suite()
+                doji_buy = check_doji_pattern()
+                fvg_buy = check_fvg_zone()
+                
+                # Optioneel: je kunt hiernaast ook je bestaande structuur-check laten meelopen
                 candles_m1 = get_tv_candles_m1()
                 candles_m5 = get_tv_candles_m5()
                 candles_daily = get_tv_candles_daily()
-                signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
+                structure_signal = scan_market_structure(now, candles_m1, candles_m5, candles_daily)
 
                 eur, sol = get_balances()
 
+                # --- MODULAIR INKOPEN (Zodra ÉÉN strategie raak is) ---
+                if sol < 0.01 and eur > 5:
+                    if hull_buy:
+                        execute_buy_order("HULL_SUITE")
+                        highest_price = sol_price
+                        sol = 1  
+                    elif doji_buy:
+                        execute_buy_order("DOJI_PATTERN")
+                        highest_price = sol_price
+                        sol = 1  
+                    elif fvg_buy or structure_signal == "BUY_SIGNAL":
+                        trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
+                        send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
+                        execute_buy_order("FVG_ZONE_OR_STRUCTURE")
+                        highest_price = sol_price
+                        sol = 1  
 
-                # --- AUTOMATISCH INKOPEN ---
-                if sol < 0.01 and eur > 5 and signal == "BUY_SIGNAL":
-                    trade_remark = "🚨 AGGRESSIVE DOJI BREAKOUT" if is_doji_day else "🛒 REGULAR OPENING BREAKOUT"
-                    send(f"{trade_remark} — FVG Gevonden! | Target: €{fvg_target_price:.2f} | Stop: €{fvg_stop_loss:.2f}")
-                    buy_all()
-                    highest_price = sol_price
-                    sol = 1  
+                # --- DYNAMISCH WINSTBEHEER & EXITS (Blijft ongewijzigd werken) ---
+                elif sol > 0 and last_buy_price is not None:
+                    if sol_price > highest_price:
+                        highest_price = sol_price
+
+                    if sol_price >= fvg_target_price:
+                        send(f"🎯 WINSDOEL BEREIKT — Target €{fvg_target_price:.2f} geraakt!")
+                        sell_all("(Take Profit)")
+                        highest_price = 0
+                        
+                    elif sol_price <= fvg_stop_loss:
+                        send(f"🚨 FVG STOP LOSS GERAAKT — Risico afgekapt op €{fvg_stop_loss:.2f}")
+                        sell_all("(Stop Loss)")
+                        highest_price = 0
+                        
+                    elif highest_price >= last_buy_price * (1 + PROFIT_ACTIVATION):
+                        active_trailing_level = highest_price * (1 - TRAILING_STOP_PERCENT)
+                        if sol_price <= active_trailing_level:
+                            send(f"🚀 TRAILING STOP LOSS GETRIGGERD — Winst veiliggesteld op €{sol_price:.2f}")
+                            sell_all("(Trailing Winstrust)")
+                            highest_price = 0
 
                 # --- DYNAMISCH WINSTBEHEER & EXITS ---
                 elif sol > 0 and last_buy_price is not None:
