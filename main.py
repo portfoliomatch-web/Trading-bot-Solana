@@ -396,16 +396,22 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
     return "WAITING"
 
 # ==========================================================
-# == MODULE 1: HULL SUITE / TREND CHECK (LOSSE FUNCTIE)
+# == MODULE 1: HULL SUITE / TREND CHECK (GEKOPPELD AAN TRADINGVIEW)
 # ==========================================================
 def check_hull_suite():
-    # Hier kun je jouw trend-logica of TradingView-check opnemen
-    # Geeft True terug als het signaal positief/groen is, anders False
-    hull_condition_met = True  # Voorbeeld
-    
-    if hull_condition_met:
-        print("[#== STRATEGY: HULL_SUITE ==] Signaal: BUY (Trend is groen)")
-        return True
+    try:
+        # We gebruiken de 5-minuten handler van TradingView als trend-filter voor de Hull Suite
+        analysis = handler_5m.get_analysis()
+        recommendation = analysis.summary["RECOMMENDATION"]
+        
+        # Als TradingView 'STRONG_BUY' of 'BUY' aangeeft, activeert de Hull Suite module
+        if "BUY" in recommendation:
+            print(f"[#== STRATEGY: HULL_SUITE ==] Signaal: BUY (TradingView aanbeveling: {recommendation})")
+            return True
+            
+    except Exception as e:
+        print(f"Fout bij ophalen Hull Suite / TV analyse: {e}")
+        
     return False
 
 
