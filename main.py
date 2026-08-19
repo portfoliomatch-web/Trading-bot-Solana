@@ -1,4 +1,4 @@
-import request(s)
+import requests
 import time
 import os
 import hmac
