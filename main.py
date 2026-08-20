@@ -9,7 +9,7 @@ from datetime import datetime
 
 load_dotenv()
 
-API_KEY) = os.getenv("API_KEY)")
+API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
