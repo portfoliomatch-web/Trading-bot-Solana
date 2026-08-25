@@ -53,6 +53,12 @@ sol_cache = []
 highest_price = 0  
 tv4_osc_cache = "NEUTRAL" 
 
+# Nieuwe timers om TradingView spam te voorkomen
+last_hull_check = 0
+cached_hull_result = False
+last_structure_check = 0
+cached_structure_signal = "WAITING"
+
 # =============================
 # RSI BEREKENING & EMA
 # =============================
@@ -399,19 +405,23 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 # == MODULE 1: HULL SUITE / TREND CHECK (GEKOPPELD AAN TRADINGVIEW)
 # ==========================================================
 def check_hull_suite():
+    global last_hull_check, cached_hull_result
+    # Cache vernieuwen elke 20 seconden om 429 errors te vermijden
+    if time.time() - last_hull_check < 20:
+        return cached_hull_result
+        
     try:
-        # We gebruiken de 5-minuten handler van TradingView als trend-filter voor de Hull Suite
         analysis = handler_5m.get_analysis()
         recommendation = analysis.summary["RECOMMENDATION"]
-        
-        # Als TradingView 'STRONG_BUY' of 'BUY' aangeeft, activeert de Hull Suite module
+        last_hull_check = time.time()
         if "BUY" in recommendation:
             print(f"[#== STRATEGY: HULL_SUITE ==] Signaal: BUY (TradingView aanbeveling: {recommendation})")
+            cached_hull_result = True
             return True
-            
     except Exception as e:
-        print(f"Fout bij ophalen Hull Suite / TV analyse: {e}")
+        print(f"Fout bij ophalen Hull Suite / TV analyse (mogelijk rate-limit): {e}")
         
+    cached_hull_result = False
     return False
 
 
@@ -505,12 +515,12 @@ def main():
             # == HOOFD-LOOP: MODULAIR SCANNEN & AUTOMATISCH KOPEN ==
             # ==========================================================
             if trading_active:
-                # Roep de losse modules onafhankelijk van elkaar aan
+                # Roep de modules aan (de cache in check_hull_suite beschermt je tegen 429)
                 hull_buy = check_hull_suite()
                 doji_buy = check_doji_pattern()
                 fvg_buy = check_fvg_zone()
                 
-                # Optioneel: je kunt hiernaast ook je bestaande structuur-check laten meelopen
+                # We halen de candles op; de interne fallbacks in je code vangen eventuele lege responses op
                 candles_m1 = get_tv_candles_m1()
                 candles_m5 = get_tv_candles_m5()
                 candles_daily = get_tv_candles_daily()
