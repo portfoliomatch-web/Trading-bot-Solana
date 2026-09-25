@@ -54,10 +54,10 @@ highest_price = 0
 tv4_osc_cache = "NEUTRAL" 
 
 # Nieuwe timers om TradingView spam te voorkomen
-last_hull_check = 0
-cached_hull_result = False
-last_structure_check = 0
-cached_structure_signal = "WAITING"
+# last_hull_check = 0
+# cached_hull_result = False
+# last_structure_check = 0
+# cached_structure_signal = "WAITING"
 
 # =============================
 # RSI BEREKENING & EMA
@@ -404,25 +404,25 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
 # ==========================================================
 # == MODULE 1: HULL SUITE / TREND CHECK (GEKOPPELD AAN TRADINGVIEW)
 # ==========================================================
-def check_hull_suite():
-    global last_hull_check, cached_hull_result
+# def check_hull_suite():
+#     global last_hull_check, cached_hull_result
     # Cache vernieuwen elke 20 seconden om 429 errors te vermijden
-    if time.time() - last_hull_check < 20:
+#     if time.time() - last_hull_check < 20:
         return cached_hull_result
         
-    try:
-        analysis = handler_5m.get_analysis()
-        recommendation = analysis.summary["RECOMMENDATION"]
-        last_hull_check = time.time()
-        if "BUY" in recommendation:
-            print(f"[#== STRATEGY: HULL_SUITE ==] Signaal: BUY (TradingView aanbeveling: {recommendation})")
-            cached_hull_result = True
-            return True
-    except Exception as e:
+#     try:
+#         analysis = handler_5m.get_analysis()
+#         recommendation = analysis.summary["RECOMMENDATION"]
+#         last_hull_check = time.time()
+#         if "BUY" in recommendation:
+#             print(f"[#== STRATEGY: HULL_SUITE ==] Signaal: BUY (TradingView aanbeveling: {recommendation})")
+#            cached_hull_result = True
+#             return True
+#     except Exception as e:
         print(f"Fout bij ophalen Hull Suite / TV analyse (mogelijk rate-limit): {e}")
         
-    cached_hull_result = False
-    return False
+#     cached_hull_result = False
+#     return False
 
 
 # ==========================================================
@@ -516,7 +516,7 @@ def main():
             # ==========================================================
             if trading_active:
                 # Roep de modules aan (de cache in check_hull_suite beschermt je tegen 429)
-                hull_buy = check_hull_suite()
+              #   hull_buy = check_hull_suite()
                 doji_buy = check_doji_pattern()
                 fvg_buy = check_fvg_zone()
                 
@@ -530,11 +530,11 @@ def main():
 
                 # --- MODULAIR INKOPEN (Zodra ÉÉN strategie raak is) ---
                 if sol < 0.01 and eur > 5:
-                    if hull_buy:
-                        execute_buy_order("HULL_SUITE")
-                        highest_price = sol_price
-                        sol = 1  
-                    elif doji_buy:
+                  #   if hull_buy:
+                  #       execute_buy_order("HULL_SUITE")
+                  #       highest_price = sol_price
+                  #       sol = 1  
+                    if doji_buy:
                         execute_buy_order("DOJI_PATTERN")
                         highest_price = sol_price
                         sol = 1  
