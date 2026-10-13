@@ -402,27 +402,32 @@ def scan_market_structure(now, candles_m1, candles_m5, daily_candles):
     return "WAITING"
 
 # ==========================================================
-# == MODULE 1: HULL SUITE / TREND CHECK (GEKOPPELD AAN TRADINGVIEW)
+# == MODULE 1: HULL SUITE / TREND CHECK (GEOPTIMALISEERD TEGEN RATE-LIMITS)
 # ==========================================================
 def check_hull_suite():
     global last_hull_check, cached_hull_result
-    # Cache vernieuwen elke 20 seconden om 429 errors te vermijden
-    if time.time() - last_hull_check < 20:
+    
+    # 🛡️ RATE-LIMIT BESCHERMING: Vraag maximaal 1 keer per 60 seconden TradingView aan
+    if time.time() - last_hull_check < 60:
         return cached_hull_result
         
     try:
+        last_hull_check = time.time()
         analysis = handler_5m.get_analysis()
         recommendation = analysis.summary["RECOMMENDATION"]
-        last_hull_check = time.time()
+        
         if "BUY" in recommendation:
             print(f"[#== STRATEGY: HULL_SUITE ==] Signaal: BUY (TradingView aanbeveling: {recommendation})")
             cached_hull_result = True
             return True
+        else:
+            cached_hull_result = False
+            return False
+            
     except Exception as e:
-        print(f"Fout bij ophalen Hull Suite / TV analyse (mogelijk rate-limit): {e}")
-        
-    cached_hull_result = False
-    return False
+        # Stille afhandeling zodat je logs niet dichtslibben op Render
+        cached_hull_result = False
+        return False
 
 
 # ==========================================================
