@@ -616,7 +616,7 @@ def main():
         except Exception as e:
             print("Fout in realtime loop:", e)
 
-        time.sleep(1)
+        time.sleep(15)
 
 # =======================================================
 # RENDER WEB SERVER & BACKROUND THREAD COUPLING
